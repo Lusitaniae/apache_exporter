@@ -25,8 +25,6 @@ var (
 	insecure         = flag.Bool("insecure", true, "Ignore server certificate if using https")
 )
 
-// Exporter collects apache stats from the given URI and exports them using
-// the prometheus metrics package.
 
 type Exporter struct {
 	URI    string
@@ -43,31 +41,6 @@ type Exporter struct {
 	workers        *prometheus.GaugeVec
 }
 
-/*
-Total Accesses: 1
-Total kBytes: 2
-Uptime: 15664
-ReqPerSec: 6.38407e-5
-BytesPerSec: .130746
-BytesPerReq: 2048
-BusyWorkers: 1
-IdleWorkers: 4
-Scoreboard: _W___
-
-Total Accesses: 302311
-Total kBytes: 1677830
-CPULoad: 27.4052
-Uptime: 45683
-ReqPerSec: 6.61758
-BytesPerSec: 37609.1
-BytesPerReq: 5683.21
-BusyWorkers: 2
-IdleWorkers: 8
-Scoreboard: _W_______K......................................................................................................................................................................................................................................................
-
-*/
-
-// NewExporter returns an initialized Exporter.
 func NewExporter(uri string) *Exporter {
 	return &Exporter{
 		URI: uri,
@@ -121,8 +94,6 @@ func NewExporter(uri string) *Exporter {
 	}
 }
 
-// Describe describes all the metrics ever exported by the apache exporter. It
-// implements prometheus.Collector.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.scrapeFailures.Describe(ch)
 	e.totalAccesses.Describe(ch)
@@ -134,6 +105,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.workers.Describe(ch)
 }
 
+// Split colon separated string into two fields
 func splitkv(s string) (string, string) {
 
 	if len(s) == 0 {

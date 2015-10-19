@@ -18,3 +18,5 @@ Help on flags:
   -telemetry.endpoint string
     	Path under which to expose metrics. (default "/metrics")
 ```
+
+Tested on Apache 2.2 and Apache 2.4.
