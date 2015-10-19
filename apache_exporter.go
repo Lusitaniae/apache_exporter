@@ -1,12 +1,12 @@
 package main
 
 import (
-        "crypto/tls"
+	"crypto/tls"
 	"flag"
-        "strconv"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -21,7 +21,7 @@ const (
 var (
 	listeningAddress = flag.String("telemetry.address", ":9114", "Address on which to expose metrics.")
 	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
-	scrapeURI   = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page")
+	scrapeURI        = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page")
 	insecure         = flag.Bool("insecure", true, "Ignore server certificate if using https")
 )
 
@@ -33,14 +33,14 @@ type Exporter struct {
 	mutex  sync.RWMutex
 	client *http.Client
 
-	scrapeFailures       prometheus.Counter
-	totalAccesses        prometheus.Counter
-	totalKBytes          prometheus.Counter
-	uptime               prometheus.Counter
-	reqPerSec            prometheus.Gauge
-	bytesPerSec          prometheus.Gauge
-	bytesPerReq          prometheus.Gauge
-	workers              *prometheus.GaugeVec
+	scrapeFailures prometheus.Counter
+	totalAccesses  prometheus.Counter
+	totalKBytes    prometheus.Counter
+	uptime         prometheus.Counter
+	reqPerSec      prometheus.Gauge
+	bytesPerSec    prometheus.Gauge
+	bytesPerReq    prometheus.Gauge
+	workers        *prometheus.GaugeVec
 }
 
 /*
@@ -76,48 +76,48 @@ func NewExporter(uri string) *Exporter {
 			Name:      "exporter_scrape_failures_total",
 			Help:      "Number of errors while scraping apache.",
 		}),
-                totalAccesses: prometheus.NewCounter(prometheus.CounterOpts{
-                        Namespace: namespace,
-                        Name:      "access_total",
-                        Help:      "Current total apache access",
-                }),
-                totalKBytes: prometheus.NewCounter(prometheus.CounterOpts{
-                        Namespace: namespace,
-                        Name:      "sent_total_kylobytes",
-                        Help:      "Current total kbytes sent",
-                }),
-                uptime: prometheus.NewCounter(prometheus.CounterOpts{
-                        Namespace: namespace,
-                        Name:      "uptime_seconds",
-                        Help:      "Current uptime in seconds",
-                }),
-                reqPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
-                        Namespace: namespace,
-                        Name:      "requests_per_second",
-                        Help:      "Requests per second",
-                }),
-                bytesPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
-                        Namespace: namespace,
-                        Name:      "sent_per_second_bytes",
-                        Help:      "Requests per second",
-                }),
-                bytesPerReq: prometheus.NewGauge(prometheus.GaugeOpts{
-                        Namespace: namespace,
-                        Name:      "request_size_bytes",
-                        Help:      "Bytes per request",
-                }),
-                workers: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-                        Namespace: namespace,
-                        Name:      "workers",
-                        Help:      "Apache worker statuses",
-                },
-                        []string{"state"},
-                ),
-                client: &http.Client{
-                        Transport: &http.Transport{
-                                TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure},
-                        },
-                },
+		totalAccesses: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "access_total",
+			Help:      "Current total apache access",
+		}),
+		totalKBytes: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "sent_total_kilobytes",
+			Help:      "Current total kbytes sent",
+		}),
+		uptime: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "uptime_seconds",
+			Help:      "Current uptime in seconds",
+		}),
+		reqPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "requests_per_second",
+			Help:      "Requests per second",
+		}),
+		bytesPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "sent_per_second_bytes",
+			Help:      "Requests per second",
+		}),
+		bytesPerReq: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "request_size_bytes",
+			Help:      "Bytes per request",
+		}),
+		workers: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "workers",
+			Help:      "Apache worker statuses",
+		},
+			[]string{"state"},
+		),
+		client: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure},
+			},
+		},
 	}
 }
 
@@ -134,22 +134,20 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.workers.Describe(ch)
 }
 
-
 func splitkv(s string) (string, string) {
 
-    if len(s) == 0 {
-        return s, s
-    }   
+	if len(s) == 0 {
+		return s, s
+	}
 
-    slice := strings.SplitN(s, ":", 2)
+	slice := strings.SplitN(s, ":", 2)
 
-    if len(slice) == 1 {
-        return slice[0], ""
-    }
+	if len(slice) == 1 {
+		return slice[0], ""
+	}
 
-    return strings.TrimSpace(slice[0]), strings.TrimSpace(slice[1])
+	return strings.TrimSpace(slice[0]), strings.TrimSpace(slice[1])
 }
-
 
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	resp, err := e.client.Get(e.URI)
@@ -159,7 +157,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	data, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-	if resp.StatusCode != 200  {
+	if resp.StatusCode != 200 {
 		if err != nil {
 			data = []byte(err.Error())
 		}
@@ -168,44 +166,44 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	lines := strings.Split(string(data), "\n")
 
-        for _, l := range lines {
-            key, v := splitkv(l)
-            if key == "Scoreboard" || key == "" {
-                continue
-            }
+	for _, l := range lines {
+		key, v := splitkv(l)
+		if key == "Scoreboard" || key == "" {
+			continue
+		}
 
-	    val, err := strconv.ParseFloat(v, 64)
-	    if err != nil {
-	        return err
-	    }
+		val, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return err
+		}
 
-	    switch {
-	        case key == "Total Accesses":
-                    e.totalAccesses.Set(val)
-                    e.totalAccesses.Collect(ch)
-	        case key == "Total kBytes":
-                    e.totalKBytes.Set(val)
-                    e.totalKBytes.Collect(ch)
-	        case key == "Uptime":
-                    e.uptime.Set(val)
-                    e.uptime.Collect(ch)
-	        case key == "ReqPerSec":
-                    e.reqPerSec.Set(val)
-                    e.reqPerSec.Collect(ch)
-	        case key == "BytesPerSec":
-                    e.bytesPerSec.Set(val)
-                    e.bytesPerSec.Collect(ch)
-	        case key == "BytesPerReq":
-                    e.bytesPerReq.Set(val)
-                    e.bytesPerReq.Collect(ch)
-	        case key == "BusyWorkers":
-                    e.workers.WithLabelValues("busy").Set(val)
-	        case key == "IdleWorkers":
-                    e.workers.WithLabelValues("idle").Set(val)
-	    }
-        }
+		switch {
+		case key == "Total Accesses":
+			e.totalAccesses.Set(val)
+			e.totalAccesses.Collect(ch)
+		case key == "Total kBytes":
+			e.totalKBytes.Set(val)
+			e.totalKBytes.Collect(ch)
+		case key == "Uptime":
+			e.uptime.Set(val)
+			e.uptime.Collect(ch)
+		case key == "ReqPerSec":
+			e.reqPerSec.Set(val)
+			e.reqPerSec.Collect(ch)
+		case key == "BytesPerSec":
+			e.bytesPerSec.Set(val)
+			e.bytesPerSec.Collect(ch)
+		case key == "BytesPerReq":
+			e.bytesPerReq.Set(val)
+			e.bytesPerReq.Collect(ch)
+		case key == "BusyWorkers":
+			e.workers.WithLabelValues("busy").Set(val)
+		case key == "IdleWorkers":
+			e.workers.WithLabelValues("idle").Set(val)
+		}
+	}
 
-        e.workers.Collect(ch)
+	e.workers.Collect(ch)
 
 	return nil
 }

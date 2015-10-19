@@ -7,8 +7,6 @@ With working golang environment it can be build with `go get`.
 Help on flags:
 
 ```
-/apache_exporter --help
-Usage of /home/ruslan/go/bin/apache_exporter:
   -insecure
     	Ignore server certificate if using https (default true)
   -log.level value

@@ -1,7 +1,5 @@
 package main
 
-
-
 import (
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +9,7 @@ import (
 )
 
 const (
-        apache24Status = `Total Accesses: 1
+	apache24Status = `Total Accesses: 1
 Total kBytes: 2
 Uptime: 15664
 ReqPerSec: 6.38407e-5
@@ -22,7 +20,7 @@ IdleWorkers: 4
 Scoreboard: _W___
 `
 
-        apache22Status = `Total Accesses: 302311
+	apache22Status = `Total Accesses: 302311
 Total kBytes: 1677830
 CPULoad: 27.4052
 Uptime: 45683
@@ -53,10 +51,10 @@ func checkApacheStatus(t *testing.T, status string) {
 
 	for i := 1; i <= metricCount; i++ {
 		m := <-ch
-                if m == nil {
-                        t.Error("expected metric but got nil")
+		if m == nil {
+			t.Error("expected metric but got nil")
 
-                }
+		}
 
 	}
 	if <-ch != nil {
@@ -65,9 +63,9 @@ func checkApacheStatus(t *testing.T, status string) {
 }
 
 func TestApache22Status(t *testing.T) {
-        checkApacheStatus(t, apache22Status)
+	checkApacheStatus(t, apache22Status)
 }
 
 func TestApache24Status(t *testing.T) {
-        checkApacheStatus(t, apache24Status)
+	checkApacheStatus(t, apache24Status)
 }
