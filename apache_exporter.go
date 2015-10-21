@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	listeningAddress = flag.String("telemetry.address", ":9114", "Address on which to expose metrics.")
+	listeningAddress = flag.String("telemetry.address", ":9117", "Address on which to expose metrics.")
 	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 	scrapeURI        = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page")
 	insecure         = flag.Bool("insecure", true, "Ignore server certificate if using https")
@@ -32,12 +32,9 @@ type Exporter struct {
 	client *http.Client
 
 	scrapeFailures prometheus.Counter
-	totalAccesses  prometheus.Counter
-	totalKBytes    prometheus.Counter
+	accessesTotal  prometheus.Counter
+	kBytesTotal    prometheus.Counter
 	uptime         prometheus.Counter
-	reqPerSec      prometheus.Gauge
-	bytesPerSec    prometheus.Gauge
-	bytesPerReq    prometheus.Gauge
 	workers        *prometheus.GaugeVec
 }
 
@@ -49,35 +46,20 @@ func NewExporter(uri string) *Exporter {
 			Name:      "exporter_scrape_failures_total",
 			Help:      "Number of errors while scraping apache.",
 		}),
-		totalAccesses: prometheus.NewCounter(prometheus.CounterOpts{
+		accessesTotal: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "access_total",
 			Help:      "Current total apache access",
 		}),
-		totalKBytes: prometheus.NewCounter(prometheus.CounterOpts{
+		kBytesTotal: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "sent_total_kilobytes",
+			Name:      "sent_kilobytes_total",
 			Help:      "Current total kbytes sent",
 		}),
 		uptime: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "uptime_seconds",
+			Name:      "uptime_seconds_total",
 			Help:      "Current uptime in seconds",
-		}),
-		reqPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "requests_per_second",
-			Help:      "Requests per second",
-		}),
-		bytesPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "sent_per_second_bytes",
-			Help:      "Requests per second",
-		}),
-		bytesPerReq: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "request_size_bytes",
-			Help:      "Bytes per request",
 		}),
 		workers: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -96,12 +78,9 @@ func NewExporter(uri string) *Exporter {
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.scrapeFailures.Describe(ch)
-	e.totalAccesses.Describe(ch)
-	e.totalKBytes.Describe(ch)
+	e.accessesTotal.Describe(ch)
+	e.kBytesTotal.Describe(ch)
 	e.uptime.Describe(ch)
-	e.reqPerSec.Describe(ch)
-	e.bytesPerSec.Describe(ch)
-	e.bytesPerReq.Describe(ch)
 	e.workers.Describe(ch)
 }
 
@@ -151,23 +130,14 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 		switch {
 		case key == "Total Accesses":
-			e.totalAccesses.Set(val)
-			e.totalAccesses.Collect(ch)
+			e.accessesTotal.Set(val)
+			e.accessesTotal.Collect(ch)
 		case key == "Total kBytes":
-			e.totalKBytes.Set(val)
-			e.totalKBytes.Collect(ch)
+			e.kBytesTotal.Set(val)
+			e.kBytesTotal.Collect(ch)
 		case key == "Uptime":
 			e.uptime.Set(val)
 			e.uptime.Collect(ch)
-		case key == "ReqPerSec":
-			e.reqPerSec.Set(val)
-			e.reqPerSec.Collect(ch)
-		case key == "BytesPerSec":
-			e.bytesPerSec.Set(val)
-			e.bytesPerSec.Collect(ch)
-		case key == "BytesPerReq":
-			e.bytesPerReq.Set(val)
-			e.bytesPerReq.Collect(ch)
 		case key == "BusyWorkers":
 			e.workers.WithLabelValues("busy").Set(val)
 		case key == "IdleWorkers":

@@ -14,7 +14,7 @@ Help on flags:
   -scrape_uri string
     	URI to apache stub status page (default "http://localhost/server-status/?auto")
   -telemetry.address string
-    	Address on which to expose metrics. (default ":9114")
+    	Address on which to expose metrics. (default ":9117")
   -telemetry.endpoint string
     	Path under which to expose metrics. (default "/metrics")
 ```
