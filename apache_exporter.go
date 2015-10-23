@@ -48,8 +48,8 @@ func NewExporter(uri string) *Exporter {
 		}),
 		accessesTotal: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
-			Name:      "access_total",
-			Help:      "Current total apache access",
+			Name:      "accesses_total",
+			Help:      "Current total apache accesses",
 		}),
 		kBytesTotal: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
