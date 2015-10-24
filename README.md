@@ -8,7 +8,7 @@ Help on flags:
 
 ```
   -insecure
-    	Ignore server certificate if using https (default true)
+    	Ignore server certificate if using https (default false)
   -log.level value
     	Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal, panic]. (default info)
   -scrape_uri string
