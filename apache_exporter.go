@@ -22,7 +22,7 @@ var (
 	listeningAddress = flag.String("telemetry.address", ":9117", "Address on which to expose metrics.")
 	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 	scrapeURI        = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page.")
-	insecure         = flag.Bool("insecure", true, "Ignore server certificate if using https.")
+	insecure         = flag.Bool("insecure", false, "Ignore server certificate if using https.")
 )
 
 type Exporter struct {
