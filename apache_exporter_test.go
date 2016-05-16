@@ -9,8 +9,26 @@ import (
 )
 
 const (
-	apache24Status = `Total Accesses: 1
+	apache24Status = `localhost
+ServerVersion: Apache/2.4.16 (Unix)
+ServerMPM: prefork
+Server Built: Jul 22 2015 21:03:09
+CurrentTime: Monday, 16-May-2016 18:37:02 JST
+RestartTime: Monday, 16-May-2016 16:36:41 JST
+ParentServerConfigGeneration: 1
+ParentServerMPMGeneration: 0
+ServerUptimeSeconds: 7220
+ServerUptime: 2 hours 20 seconds
+Load1: 3.23
+Load5: 3.29
+Load15: 2.89
+Total Accesses: 1
 Total kBytes: 2
+CPUUser: 0
+CPUSystem: .03
+CPUChildrenUser: 0
+CPUChildrenSystem: 0
+CPULoad: .000415512
 Uptime: 15664
 ReqPerSec: 6.38407e-5
 BytesPerSec: .130746

@@ -118,28 +118,45 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	for _, l := range lines {
 		key, v := splitkv(l)
-		if key == "Scoreboard" || key == "" {
-			continue
-		}
-
-		val, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			return err
-		}
 
 		switch {
 		case key == "Total Accesses":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
 			e.accessesTotal.Set(val)
 			e.accessesTotal.Collect(ch)
 		case key == "Total kBytes":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
 			e.kBytesTotal.Set(val)
 			e.kBytesTotal.Collect(ch)
 		case key == "Uptime":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
 			e.uptime.Set(val)
 			e.uptime.Collect(ch)
 		case key == "BusyWorkers":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
 			e.workers.WithLabelValues("busy").Set(val)
 		case key == "IdleWorkers":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
 			e.workers.WithLabelValues("idle").Set(val)
 		}
 	}
