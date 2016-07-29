@@ -27,7 +27,7 @@ var (
 
 type Exporter struct {
 	URI    string
-	mutex  sync.RWMutex
+	mutex  sync.Mutex
 	client *http.Client
 
 	scrapeFailures prometheus.Counter
@@ -35,6 +35,7 @@ type Exporter struct {
 	kBytesTotal    prometheus.Counter
 	uptime         prometheus.Counter
 	workers        *prometheus.GaugeVec
+	connections    *prometheus.GaugeVec
 }
 
 func NewExporter(uri string) *Exporter {
@@ -67,6 +68,13 @@ func NewExporter(uri string) *Exporter {
 		},
 			[]string{"state"},
 		),
+		connections: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "connections",
+			Help:      "Apache connection statuses",
+		},
+			[]string{"state"},
+		),
 		client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure},
@@ -81,6 +89,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.kBytesTotal.Describe(ch)
 	e.uptime.Describe(ch)
 	e.workers.Describe(ch)
+	e.connections.Describe(ch)
 }
 
 // Split colon separated string into two fields
@@ -158,10 +167,39 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.workers.WithLabelValues("idle").Set(val)
+		case key == "ConnsTotal":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.connections.WithLabelValues("total").Set(val)
+		case key == "ConnsAsyncWriting":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.connections.WithLabelValues("writing").Set(val)
+		case key == "ConnsAsyncKeepAlive":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+			e.connections.WithLabelValues("keepalive").Set(val)
+		case key == "ConnsAsyncClosing":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+			e.connections.WithLabelValues("closing").Set(val)
 		}
+
+
 	}
 
 	e.workers.Collect(ch)
+	e.connections.Collect(ch)
 
 	return nil
 }
