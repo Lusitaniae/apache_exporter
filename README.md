@@ -2,7 +2,7 @@
 
 Exports apache mod_status statistics via HTTP for Prometheus consumption.
 
-With working golang environment it can be built with `go get`.
+With working golang environment it can be built with `go get`.  There is a [good article](https://machineperson.github.io/monitoring/2016/01/04/exporting-apache-metrics-to-prometheus.html) with build HOWTO and usage example.
 
 Help on flags:
 
@@ -20,3 +20,4 @@ Help on flags:
 ```
 
 Tested on Apache 2.2 and Apache 2.4.
+
