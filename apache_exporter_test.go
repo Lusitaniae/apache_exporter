@@ -42,6 +42,51 @@ ConnsAsyncClosing: 0
 Scoreboard: _W___
 `
 
+	apache24WorkerStatus = `localhost
+ServerVersion: Apache/2.4.23 (Unix) OpenSSL/1.0.2h
+ServerMPM: worker
+Server Built: Aug 31 2016 10:54:08
+CurrentTime: Thursday, 08-Sep-2016 15:09:32 CEST
+RestartTime: Thursday, 08-Sep-2016 15:08:07 CEST
+ParentServerConfigGeneration: 1
+ParentServerMPMGeneration: 0
+ServerUptimeSeconds: 85
+ServerUptime: 1 minute 25 seconds
+Load1: 0.00
+Load5: 0.01
+Load15: 0.05
+Total Accesses: 10
+Total kBytes: 38
+CPUUser: .05
+CPUSystem: 0
+CPUChildrenUser: 0
+CPUChildrenSystem: 0
+CPULoad: .0588235
+Uptime: 85
+ReqPerSec: .117647
+BytesPerSec: 457.788
+BytesPerReq: 3891.2
+BusyWorkers: 2
+IdleWorkers: 48
+Scoreboard: _____R_______________________K____________________....................................................................................................
+TLSSessionCacheStatus
+CacheType: SHMCB
+CacheSharedMemory: 512000
+CacheCurrentEntries: 0
+CacheSubcaches: 32
+CacheIndexesPerSubcaches: 88
+CacheIndexUsage: 0%
+CacheUsage: 0%
+CacheStoreCount: 0
+CacheReplaceCount: 0
+CacheExpireCount: 0
+CacheDiscardCount: 0
+CacheRetrieveHitCount: 0
+CacheRetrieveMissCount: 1
+CacheRemoveHitCount: 0
+CacheRemoveMissCount: 0
+`
+
 	apache22Status = `Total Accesses: 302311
 Total kBytes: 1677830
 CPULoad: 27.4052
@@ -56,6 +101,7 @@ Scoreboard: _W_______K..........................................................
 
 	metricCountApache22 = 5
         metricCountApache24 = 9
+        metricCountApache24Worker = 5
 
 )
 
@@ -77,9 +123,7 @@ func checkApacheStatus(t *testing.T, status string, metricCount int) {
 		m := <-ch
 		if m == nil {
 			t.Error("expected metric but got nil")
-
 		}
-
 	}
 	if <-ch != nil {
 		t.Error("expected closed channel")
@@ -92,4 +136,8 @@ func TestApache22Status(t *testing.T) {
 
 func TestApache24Status(t *testing.T) {
 	checkApacheStatus(t, apache24Status, metricCountApache24)
+}
+
+func TestApache24WorkerStatus(t *testing.T) {
+	checkApacheStatus(t, apache24WorkerStatus, metricCountApache24Worker)
 }

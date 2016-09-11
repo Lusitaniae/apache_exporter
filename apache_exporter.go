@@ -125,8 +125,13 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	lines := strings.Split(string(data), "\n")
 
+        connectionInfo := false
+
 	for _, l := range lines {
 		key, v := splitkv(l)
+		if err != nil {
+			continue
+		}
 
 		switch {
 		case key == "Total Accesses":
@@ -174,6 +179,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.connections.WithLabelValues("total").Set(val)
+                        connectionInfo = true
 		case key == "ConnsAsyncWriting":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -181,25 +187,30 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.connections.WithLabelValues("writing").Set(val)
+                        connectionInfo = true
 		case key == "ConnsAsyncKeepAlive":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 			e.connections.WithLabelValues("keepalive").Set(val)
+                        connectionInfo = true
 		case key == "ConnsAsyncClosing":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 			e.connections.WithLabelValues("closing").Set(val)
+                        connectionInfo = true
 		}
 
 
 	}
 
 	e.workers.Collect(ch)
-	e.connections.Collect(ch)
+        if connectionInfo {
+		e.connections.Collect(ch)
+        }
 
 	return nil
 }
