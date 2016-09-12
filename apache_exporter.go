@@ -34,6 +34,9 @@ type Exporter struct {
 	accessesTotal  prometheus.Counter
 	kBytesTotal    prometheus.Counter
 	uptime         prometheus.Counter
+        ReqPerSec      prometheus.Gauge
+        BytesPerSec    prometheus.Gauge
+        BytesPerReq    prometheus.Gauge
 	workers        *prometheus.GaugeVec
 	connections    *prometheus.GaugeVec
 }
@@ -55,6 +58,21 @@ func NewExporter(uri string) *Exporter {
 			Namespace: namespace,
 			Name:      "sent_kilobytes_total",
 			Help:      "Current total kbytes sent",
+		}),
+		ReqPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:	   "requests_per_second",
+			Help:	   "Current requests per second",
+		}),
+		BytesPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "bytes_per_second",
+			Help:      "Current bytes per second",
+		}),
+		BytesPerReq: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:	   "bytes_per_request",
+			Help:	   "Current bytes per request",
 		}),
 		uptime: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
@@ -90,6 +108,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.uptime.Describe(ch)
 	e.workers.Describe(ch)
 	e.connections.Describe(ch)
+        e.ReqPerSec.Describe(ch)
+        e.BytesPerSec.Describe(ch)
+        e.BytesPerReq.Describe(ch)
 }
 
 // Split colon separated string into two fields
@@ -150,6 +171,30 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 			e.kBytesTotal.Set(val)
 			e.kBytesTotal.Collect(ch)
+		case key == "ReqPerSec":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.ReqPerSec.Set(val)
+			e.ReqPerSec.Collect(ch)
+		case key == "BytesPerSec":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.BytesPerSec.Set(val)
+			e.BytesPerSec.Collect(ch)
+		case key == "BytesPerReq":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.BytesPerReq.Set(val)
+			e.BytesPerReq.Collect(ch)
 		case key == "Uptime":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
