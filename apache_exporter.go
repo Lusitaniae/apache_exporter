@@ -136,7 +136,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	lines := strings.Split(string(data), "\n")
 
-        connectionInfo := false
+	connectionInfo := false
 
 	for _, l := range lines {
 		key, v := splitkv(l)
@@ -190,7 +190,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.connections.WithLabelValues("total").Set(val)
-                        connectionInfo = true
+			connectionInfo = true
 		case key == "ConnsAsyncWriting":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -198,30 +198,29 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.connections.WithLabelValues("writing").Set(val)
-                        connectionInfo = true
+			connectionInfo = true
 		case key == "ConnsAsyncKeepAlive":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 			e.connections.WithLabelValues("keepalive").Set(val)
-                        connectionInfo = true
+			connectionInfo = true
 		case key == "ConnsAsyncClosing":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 			e.connections.WithLabelValues("closing").Set(val)
-                        connectionInfo = true
+			connectionInfo = true
 		}
-
 
 	}
 
 	e.workers.Collect(ch)
-        if connectionInfo {
+	if connectionInfo {
 		e.connections.Collect(ch)
-        }
+	}
 
 	return nil
 }
