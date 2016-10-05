@@ -35,6 +35,7 @@ type Exporter struct {
 	kBytesTotal    prometheus.Counter
 	uptime         prometheus.Counter
 	workers        *prometheus.GaugeVec
+	scoreboard     *prometheus.GaugeVec
 	connections    *prometheus.GaugeVec
 }
 
@@ -68,6 +69,13 @@ func NewExporter(uri string) *Exporter {
 		},
 			[]string{"state"},
 		),
+		scoreboard: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "scoreboard",
+			Help:      "Apache scoreboard statuses",
+		},
+			[]string{"state"},
+		),
 		connections: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "connections",
@@ -89,6 +97,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.kBytesTotal.Describe(ch)
 	e.uptime.Describe(ch)
 	e.workers.Describe(ch)
+	e.scoreboard.Describe(ch)
 	e.connections.Describe(ch)
 }
 
@@ -106,6 +115,37 @@ func splitkv(s string) (string, string) {
 	}
 
 	return strings.TrimSpace(slice[0]), strings.TrimSpace(slice[1])
+}
+
+func (e *Exporter) updateScoreboard(scoreboard string) {
+	e.scoreboard.Reset()
+	for _, worker_status := range scoreboard {
+		s := string(worker_status)
+		switch {
+		case s == "_":
+			e.scoreboard.WithLabelValues("idle").Inc()
+		case s == "S":
+			e.scoreboard.WithLabelValues("startup").Inc()
+		case s == "R":
+			e.scoreboard.WithLabelValues("read").Inc()
+		case s == "W":
+			e.scoreboard.WithLabelValues("reply").Inc()
+		case s == "K":
+			e.scoreboard.WithLabelValues("keepalive").Inc()
+		case s == "D":
+			e.scoreboard.WithLabelValues("dns").Inc()
+		case s == "C":
+			e.scoreboard.WithLabelValues("closing").Inc()
+		case s == "L":
+			e.scoreboard.WithLabelValues("logging").Inc()
+		case s == "G":
+			e.scoreboard.WithLabelValues("graceful_stop").Inc()
+		case s == "I":
+			e.scoreboard.WithLabelValues("idle_cleanup").Inc()
+		case s == ".":
+			e.scoreboard.WithLabelValues("open_slot").Inc()
+		}
+	}
 }
 
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
@@ -172,6 +212,9 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.workers.WithLabelValues("idle").Set(val)
+		case key == "Scoreboard":
+			e.updateScoreboard(v)
+			e.scoreboard.Collect(ch)
 		case key == "ConnsTotal":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
