@@ -30,6 +30,7 @@ type Exporter struct {
 	mutex  sync.Mutex
 	client *http.Client
 
+	up             prometheus.Gauge
 	scrapeFailures prometheus.Counter
 	accessesTotal  prometheus.Counter
 	kBytesTotal    prometheus.Counter
@@ -41,6 +42,11 @@ type Exporter struct {
 func NewExporter(uri string) *Exporter {
 	return &Exporter{
 		URI: uri,
+		up: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "up",
+			Help:      "Could the apache server be reached.",
+		}),
 		scrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "exporter_scrape_failures_total",
@@ -84,6 +90,7 @@ func NewExporter(uri string) *Exporter {
 }
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
+	e.up.Describe(ch)
 	e.scrapeFailures.Describe(ch)
 	e.accessesTotal.Describe(ch)
 	e.kBytesTotal.Describe(ch)
@@ -111,8 +118,12 @@ func splitkv(s string) (string, string) {
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	resp, err := e.client.Get(e.URI)
 	if err != nil {
+		e.up.Set(0)
+		e.up.Collect(ch)
 		return fmt.Errorf("Error scraping apache: %v", err)
 	}
+	e.up.Set(1)
+	e.up.Collect(ch)
 
 	data, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -125,7 +136,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	lines := strings.Split(string(data), "\n")
 
-        connectionInfo := false
+	connectionInfo := false
 
 	for _, l := range lines {
 		key, v := splitkv(l)
@@ -179,7 +190,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.connections.WithLabelValues("total").Set(val)
-                        connectionInfo = true
+			connectionInfo = true
 		case key == "ConnsAsyncWriting":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -187,30 +198,29 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.connections.WithLabelValues("writing").Set(val)
-                        connectionInfo = true
+			connectionInfo = true
 		case key == "ConnsAsyncKeepAlive":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 			e.connections.WithLabelValues("keepalive").Set(val)
-                        connectionInfo = true
+			connectionInfo = true
 		case key == "ConnsAsyncClosing":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 			e.connections.WithLabelValues("closing").Set(val)
-                        connectionInfo = true
+			connectionInfo = true
 		}
-
 
 	}
 
 	e.workers.Collect(ch)
-        if connectionInfo {
+	if connectionInfo {
 		e.connections.Collect(ch)
-        }
+	}
 
 	return nil
 }
