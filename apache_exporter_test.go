@@ -99,9 +99,9 @@ IdleWorkers: 8
 Scoreboard: _W_______K......................................................................................................................................................................................................................................................
 `
 
-	metricCountApache22 = 5
-        metricCountApache24 = 9
-        metricCountApache24Worker = 5
+	metricCountApache22 = 6
+        metricCountApache24 = 10
+        metricCountApache24Worker = 6
 
 )
 
