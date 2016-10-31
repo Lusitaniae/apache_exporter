@@ -191,7 +191,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 				return err
 			}
 
-			e.accessesTotal.Set(val)
+			e.accessesTotal.Add(val)
 			e.accessesTotal.Collect(ch)
 		case key == "Total kBytes":
 			val, err := strconv.ParseFloat(v, 64)
@@ -199,7 +199,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 				return err
 			}
 
-			e.kBytesTotal.Set(val)
+			e.kBytesTotal.Add(val)
 			e.kBytesTotal.Collect(ch)
 		case key == "Uptime":
 			val, err := strconv.ParseFloat(v, 64)
@@ -207,7 +207,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 				return err
 			}
 
-			e.uptime.Set(val)
+			e.uptime.Add(val)
 			e.uptime.Collect(ch)
 		case key == "BusyWorkers":
 			val, err := strconv.ParseFloat(v, 64)
