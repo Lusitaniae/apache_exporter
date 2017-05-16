@@ -9,8 +9,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+        "time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/prometheus/common/log"
 )
 
@@ -19,10 +21,11 @@ const (
 )
 
 var (
-	listeningAddress = flag.String("telemetry.address", ":9117", "Address on which to expose metrics.")
-	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
+	//listeningAddress = flag.String("telemetry.address", ":9117", "Address on which to expose metrics.")
+	//metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 	scrapeURI        = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page.")
 	insecure         = flag.Bool("insecure", false, "Ignore server certificate if using https.")
+        pushURI          = flag.String("pushgateway_uri", "pushgateway:9091", "Prometheus URI webscraper page")
 )
 
 type Exporter struct {
@@ -279,8 +282,14 @@ func main() {
 
 	exporter := NewExporter(*scrapeURI)
 	prometheus.MustRegister(exporter)
-
-	log.Infof("Starting Server: %s", *listeningAddress)
-	http.Handle(*metricsEndpoint, prometheus.Handler())
-	log.Fatal(http.ListenAndServe(*listeningAddress, nil))
+	for{
+		if err := push.AddCollectors("apache_stats", nil,*pushURI, exporter,);
+		err != nil {
+		fmt.Println("Could not push metrics to Pushgateway:", err)
+	  }
+	  time.Sleep(5*time.Second)
+	}
+	//log.Infof("Starting Server: %s", *listeningAddress)
+	//http.Handle(*metricsEndpoint, prometheus.Handler())
+	//log.Fatal(http.ListenAndServe(*listeningAddress, nil))
 }
