@@ -28,7 +28,6 @@ Tested on Apache 2.2 and Apache 2.4.
 Run the following commands from the project root directory.
 
 ```
-env GOOS=linux GOARCH=amd64 go build .
 docker build -t apache_exporter .
 ```
 
