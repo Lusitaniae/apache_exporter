@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	"github.com/prometheus/common/version"
 )
 
 const (
@@ -23,6 +25,7 @@ var (
 	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 	scrapeURI        = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page.")
 	insecure         = flag.Bool("insecure", false, "Ignore server certificate if using https.")
+	showVersion      = flag.Bool("version", false, "Print version information.")
 )
 
 type Exporter struct {
@@ -277,8 +280,16 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func main() {
 	flag.Parse()
 
+	if *showVersion {
+		fmt.Fprintln(os.Stdout, version.Print("apache_exporter"))
+		os.Exit(0)
+	}
 	exporter := NewExporter(*scrapeURI)
 	prometheus.MustRegister(exporter)
+	prometheus.MustRegister(version.NewCollector("apache_exporter"))
+
+	log.Infoln("Starting apache_exporter", version.Info())
+	log.Infoln("Build context", version.BuildContext())
 
 	log.Infof("Starting Server: %s", *listeningAddress)
 	http.Handle(*metricsEndpoint, prometheus.Handler())
