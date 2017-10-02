@@ -99,10 +99,9 @@ IdleWorkers: 8
 Scoreboard: _W_______K......................................................................................................................................................................................................................................................
 `
 
-	metricCountApache22 = 10
-        metricCountApache24 = 12
-        metricCountApache24Worker = 10
-
+	metricCountApache22       = 10
+	metricCountApache24       = 12
+	metricCountApache24Worker = 10
 )
 
 func checkApacheStatus(t *testing.T, status string, metricCount int) {
