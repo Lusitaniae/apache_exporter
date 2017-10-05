@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	"github.com/prometheus/common/version"
 )
 
 const (
@@ -23,6 +25,7 @@ var (
 	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 	scrapeURI        = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page.")
 	insecure         = flag.Bool("insecure", false, "Ignore server certificate if using https.")
+	showVersion      = flag.Bool("version", false, "Print version information.")
 )
 
 type Exporter struct {
@@ -44,30 +47,30 @@ func NewExporter(uri string) *Exporter {
 	return &Exporter{
 		URI: uri,
 		up: prometheus.NewDesc(
-                        prometheus.BuildFQName(namespace, "", "up"),
-                        "Could the apache server be reached",
-                        nil,
+			prometheus.BuildFQName(namespace, "", "up"),
+			"Could the apache server be reached",
+			nil,
 			nil),
-                scrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
-                        Namespace: namespace,
-                        Name:      "exporter_scrape_failures_total",
-                        Help:      "Number of errors while scraping apache.",
-                }),
-                accessesTotal: prometheus.NewDesc(
-                        prometheus.BuildFQName(namespace, "", "accesses_total"),
-                        "Current total apache accesses",
-                        nil,
-                        nil),
-                kBytesTotal: prometheus.NewDesc(
-                        prometheus.BuildFQName(namespace, "", "sent_kilobytes_total"),
-                        "Current total kbytes sent",
-                        nil,
-                        nil),
-                uptime: prometheus.NewDesc(
-                        prometheus.BuildFQName(namespace, "", "uptime_seconds_total"),
-                        "Current uptime in seconds",
-                        nil,
-                        nil),
+		scrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "exporter_scrape_failures_total",
+			Help:      "Number of errors while scraping apache.",
+		}),
+		accessesTotal: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "accesses_total"),
+			"Current total apache accesses",
+			nil,
+			nil),
+		kBytesTotal: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "sent_kilobytes_total"),
+			"Current total kbytes sent",
+			nil,
+			nil),
+		uptime: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "uptime_seconds_total"),
+			"Current uptime in seconds",
+			nil,
+			nil),
 		workers: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "workers",
@@ -98,14 +101,14 @@ func NewExporter(uri string) *Exporter {
 }
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-        ch <- e.up
-        ch <- e.accessesTotal
-        ch <- e.kBytesTotal
-        ch <- e.uptime
-        e.scrapeFailures.Describe(ch)
-        e.workers.Describe(ch)
-        e.scoreboard.Describe(ch)
-        e.connections.Describe(ch)
+	ch <- e.up
+	ch <- e.accessesTotal
+	ch <- e.kBytesTotal
+	ch <- e.uptime
+	e.scrapeFailures.Describe(ch)
+	e.workers.Describe(ch)
+	e.scoreboard.Describe(ch)
+	e.connections.Describe(ch)
 }
 
 // Split colon separated string into two fields
@@ -158,10 +161,10 @@ func (e *Exporter) updateScoreboard(scoreboard string) {
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	resp, err := e.client.Get(e.URI)
 	if err != nil {
-                ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+		ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
 		return fmt.Errorf("Error scraping apache: %v", err)
 	}
-        ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 1)
+	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 1)
 
 	data, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -189,21 +192,21 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 				return err
 			}
 
-                ch <- prometheus.MustNewConstMetric(e.accessesTotal, prometheus.CounterValue, val)
+			ch <- prometheus.MustNewConstMetric(e.accessesTotal, prometheus.CounterValue, val)
 		case key == "Total kBytes":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 
-                ch <- prometheus.MustNewConstMetric(e.kBytesTotal, prometheus.CounterValue, val)
+			ch <- prometheus.MustNewConstMetric(e.kBytesTotal, prometheus.CounterValue, val)
 		case key == "Uptime":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 
-                ch <- prometheus.MustNewConstMetric(e.uptime, prometheus.CounterValue, val)
+			ch <- prometheus.MustNewConstMetric(e.uptime, prometheus.CounterValue, val)
 		case key == "BusyWorkers":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -277,8 +280,16 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func main() {
 	flag.Parse()
 
+	if *showVersion {
+		fmt.Fprintln(os.Stdout, version.Print("apache_exporter"))
+		os.Exit(0)
+	}
 	exporter := NewExporter(*scrapeURI)
 	prometheus.MustRegister(exporter)
+	prometheus.MustRegister(version.NewCollector("apache_exporter"))
+
+	log.Infoln("Starting apache_exporter", version.Info())
+	log.Infoln("Build context", version.BuildContext())
 
 	log.Infof("Starting Server: %s", *listeningAddress)
 	http.Handle(*metricsEndpoint, prometheus.Handler())
