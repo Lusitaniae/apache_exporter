@@ -1,5 +1,3 @@
-This repository is obsolete. The exporter is now maintened here: https://github.com/Lusitaniae/apache_exporter
-
 # Apache Exporter for Prometheus
 
 Exports apache mod_status statistics via HTTP for Prometheus consumption.
