@@ -1,4 +1,7 @@
-# Apache Exporter for Prometheus
+# Apache Exporter for Prometheus [![Build Status][buildstatus]][circleci]
+
+[![Docker Repository on Quay](https://quay.io/repository/Lusitaniae/apache-exporter/status)][quay]
+[![Docker Pulls](https://img.shields.io/docker/pulls/lusotycoon/apache-exporter.svg?maxAge=604800)][hub]
 
 Exports apache mod_status statistics via HTTP for Prometheus consumption.
 
@@ -39,3 +42,55 @@ docker build -t apache_exporter .
 docker run -d -p 9117:9117 apache_exporter \
   -scrape_uri "https://your.server.com/server-status/?auto"
 ```
+
+## Collectors
+
+The exporter collects a number of statistics from the server:
+
+```
+# HELP apache_accesses_total Current total apache accesses
+# TYPE apache_accesses_total counter
+# HELP apache_scoreboard Apache scoreboard statuses
+# TYPE apache_scoreboard gauge
+# HELP apache_sent_kilobytes_total Current total kbytes sent
+# TYPE apache_sent_kilobytes_total counter
+# HELP apache_up Could the apache server be reached
+# TYPE apache_up gauge
+# HELP apache_uptime_seconds_total Current uptime in seconds
+# TYPE apache_uptime_seconds_total counter
+# HELP apache_workers Apache worker statuses
+# TYPE apache_workers gauge
+```
+
+Request metrics:
+
+```
+# HELP http_request_duration_microseconds The HTTP request latencies in microseconds.
+# TYPE http_request_duration_microseconds summary
+# HELP http_request_size_bytes The HTTP request sizes in bytes.
+# TYPE http_request_size_bytes summary
+# HELP http_response_size_bytes The HTTP response sizes in bytes.
+# TYPE http_response_size_bytes summary
+```
+
+Process metrics:
+
+```
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+```
+
+[buildstatus]: https://circleci.com/gh/prometheus/memcached_exporter/tree/master.svg?style=shield
+[quay]: https://quay.io/repository/Lusitaniae/apache-exporter
+[circleci]: https://circleci.com/gh/Lusitaniae/apache_exporter
+[hub]: https://hub.docker.com/r/lusotycoon/apache-exporter/
