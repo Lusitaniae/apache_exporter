@@ -90,6 +90,12 @@ Process metrics:
 # TYPE process_virtual_memory_bytes gauge
 ```
 
+
+## Author
+
+The exporter was originally created by [neezgee](https://github.com/neezgee).
+
+
 [buildstatus]: https://circleci.com/gh/prometheus/memcached_exporter/tree/master.svg?style=shield
 [quay]: https://quay.io/repository/Lusitaniae/apache-exporter
 [circleci]: https://circleci.com/gh/Lusitaniae/apache_exporter
