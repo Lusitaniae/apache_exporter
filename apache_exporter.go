@@ -37,7 +37,11 @@ type Exporter struct {
 	scrapeFailures prometheus.Counter
 	accessesTotal  *prometheus.Desc
 	kBytesTotal    *prometheus.Desc
+	cpuload        *prometheus.Desc
 	uptime         *prometheus.Desc
+	reqpersec      *prometheus.Desc
+	bytespersec	   *prometheus.Desc
+	bytesperreq    *prometheus.Desc
 	workers        *prometheus.GaugeVec
 	scoreboard     *prometheus.GaugeVec
 	connections    *prometheus.GaugeVec
@@ -66,9 +70,29 @@ func NewExporter(uri string) *Exporter {
 			"Current total kbytes sent",
 			nil,
 			nil),
+		cpuload: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "cpu_load"),
+			"CPU Load*",
+			nil,
+			nil),
 		uptime: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "uptime_seconds_total"),
 			"Current uptime in seconds",
+			nil,
+			nil),
+		reqpersec: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "requests_per_second"),
+			"Requests per second*",
+			nil,
+			nil),
+		bytespersec: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "bytes_per_second"),
+			"Bytes per second*",
+			nil,
+			nil),
+		bytesperreq: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "bytes_per_request"),
+			"Bytes per request*",
 			nil,
 			nil),
 		workers: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -104,7 +128,11 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.up
 	ch <- e.accessesTotal
 	ch <- e.kBytesTotal
+	ch <- e.cpuload
 	ch <- e.uptime
+	ch <- e.reqpersec
+	ch <- e.bytespersec
+	ch <- e.bytesperreq
 	e.scrapeFailures.Describe(ch)
 	e.workers.Describe(ch)
 	e.scoreboard.Describe(ch)
@@ -200,6 +228,13 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			ch <- prometheus.MustNewConstMetric(e.kBytesTotal, prometheus.CounterValue, val)
+		case key == "CPULoad":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			ch <- prometheus.MustNewConstMetric(e.cpuload, prometheus.CounterValue, val)
 		case key == "Uptime":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -207,6 +242,27 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			ch <- prometheus.MustNewConstMetric(e.uptime, prometheus.CounterValue, val)
+		case key == "ReqPerSec":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			ch <- prometheus.MustNewConstMetric(e.reqpersec, prometheus.CounterValue, val)
+		case key == "BytesPerSec":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			ch <- prometheus.MustNewConstMetric(e.bytespersec, prometheus.CounterValue, val)
+		case key == "BytesPerReq":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			ch <- prometheus.MustNewConstMetric(e.bytesperreq, prometheus.CounterValue, val)
 		case key == "BusyWorkers":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
