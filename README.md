@@ -48,17 +48,17 @@ docker run -d -p 9117:9117 apache_exporter \
 The exporter collects a number of statistics from the server:
 
 ```
-# HELP apache_accesses_total Current total apache accesses*
+# HELP apache_accesses_total Current total apache accesses (*)
 # TYPE apache_accesses_total counter
 # HELP apache_scoreboard Apache scoreboard statuses
 # TYPE apache_scoreboard gauge
-# HELP apache_sent_kilobytes_total Current total kbytes sent*
+# HELP apache_sent_kilobytes_total Current total kbytes sent (*)
 # TYPE apache_sent_kilobytes_total counter
-# HELP apache_cpu_load CPU Load*
+# HELP apache_cpu_load CPU Load (*)
 # TYPE apache_cpu_load counter
 # HELP apache_up Could the apache server be reached
 # TYPE apache_up gauge
-# HELP apache_uptime_seconds_total Current uptime in seconds*
+# HELP apache_uptime_seconds_total Current uptime in seconds (*)
 # TYPE apache_uptime_seconds_total counter
 # HELP apache_workers Apache worker statuses
 # TYPE apache_workers gauge
@@ -67,12 +67,6 @@ The exporter collects a number of statistics from the server:
 Request metrics:
 
 ```
-# HELP apache_requests_per_second Requests per second*
-# TYPE apache_requests_per_second counter
-# HELP apache_bytes_per_second Bytes per second*
-# TYPE apache_bytes_per_second counter
-# HELP apache_bytes_per_request Bytes per request*
-# TYPE apache_bytes_per_request counter
 # HELP http_request_duration_microseconds The HTTP request latencies in microseconds.
 # TYPE http_request_duration_microseconds summary
 # HELP http_request_size_bytes The HTTP request sizes in bytes.
@@ -98,7 +92,7 @@ Process metrics:
 # TYPE process_virtual_memory_bytes gauge
 ```
 
-Metrics with '*' on the end works only when "ExtendedStatus" is set to "on" in httpd.conf (default since apache 2.3.6)
+Metrics marked '(*)' are only available if ExtendedStatus is On in apache webserver configuration. In version 2.3.6, loading mod_status will toggle ExtendedStatus On by default.
 
 ## Author
 

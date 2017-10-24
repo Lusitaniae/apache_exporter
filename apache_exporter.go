@@ -37,11 +37,8 @@ type Exporter struct {
 	scrapeFailures prometheus.Counter
 	accessesTotal  *prometheus.Desc
 	kBytesTotal    *prometheus.Desc
-	cpuload        *prometheus.Desc
+	cpuload        prometheus.Gauge
 	uptime         *prometheus.Desc
-	reqpersec      *prometheus.Desc
-	bytespersec	   *prometheus.Desc
-	bytesperreq    *prometheus.Desc
 	workers        *prometheus.GaugeVec
 	scoreboard     *prometheus.GaugeVec
 	connections    *prometheus.GaugeVec
@@ -62,37 +59,22 @@ func NewExporter(uri string) *Exporter {
 		}),
 		accessesTotal: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "accesses_total"),
-			"Current total apache accesses",
+			"Current total apache accesses (*)",
 			nil,
 			nil),
 		kBytesTotal: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "sent_kilobytes_total"),
-			"Current total kbytes sent",
+			"Current total kbytes sent (*)",
 			nil,
 			nil),
-		cpuload: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "cpu_load"),
-			"CPU Load*",
-			nil,
-			nil),
+		cpuload: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "cpuload",
+			Help:      "The current percentage CPU used by each worker and in total by all workers combined (*)",
+		}),
 		uptime: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "uptime_seconds_total"),
-			"Current uptime in seconds",
-			nil,
-			nil),
-		reqpersec: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "requests_per_second"),
-			"Requests per second*",
-			nil,
-			nil),
-		bytespersec: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "bytes_per_second"),
-			"Bytes per second*",
-			nil,
-			nil),
-		bytesperreq: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "bytes_per_request"),
-			"Bytes per request*",
+			"Current uptime in seconds (*)",
 			nil,
 			nil),
 		workers: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -128,11 +110,8 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.up
 	ch <- e.accessesTotal
 	ch <- e.kBytesTotal
-	ch <- e.cpuload
 	ch <- e.uptime
-	ch <- e.reqpersec
-	ch <- e.bytespersec
-	ch <- e.bytesperreq
+	e.cpuload.Describe(ch)
 	e.scrapeFailures.Describe(ch)
 	e.workers.Describe(ch)
 	e.scoreboard.Describe(ch)
@@ -234,7 +213,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 				return err
 			}
 
-			ch <- prometheus.MustNewConstMetric(e.cpuload, prometheus.CounterValue, val)
+			e.cpuload.Set(val)
 		case key == "Uptime":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -242,27 +221,6 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			ch <- prometheus.MustNewConstMetric(e.uptime, prometheus.CounterValue, val)
-		case key == "ReqPerSec":
-			val, err := strconv.ParseFloat(v, 64)
-			if err != nil {
-				return err
-			}
-
-			ch <- prometheus.MustNewConstMetric(e.reqpersec, prometheus.CounterValue, val)
-		case key == "BytesPerSec":
-			val, err := strconv.ParseFloat(v, 64)
-			if err != nil {
-				return err
-			}
-
-			ch <- prometheus.MustNewConstMetric(e.bytespersec, prometheus.CounterValue, val)
-		case key == "BytesPerReq":
-			val, err := strconv.ParseFloat(v, 64)
-			if err != nil {
-				return err
-			}
-
-			ch <- prometheus.MustNewConstMetric(e.bytesperreq, prometheus.CounterValue, val)
 		case key == "BusyWorkers":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -314,6 +272,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	}
 
+	e.cpuload.Collect(ch)
 	e.workers.Collect(ch)
 	if connectionInfo {
 		e.connections.Collect(ch)
