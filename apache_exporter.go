@@ -305,8 +305,17 @@ func main() {
 
 	log.Infoln("Starting apache_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
-
 	log.Infof("Starting Server: %s", *listeningAddress)
+
 	http.Handle(*metricsEndpoint, prometheus.Handler())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html>
+			 <head><title>Apache Exporter</title></head>
+			 <body>
+			 <h1>Apache Exporter</h1>
+			 <p><a href='` + *metricsEndpoint + `'>Metrics</a></p>
+			 </body>
+			 </html>`))
+	})
 	log.Fatal(http.ListenAndServe(*listeningAddress, nil))
 }
