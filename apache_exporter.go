@@ -37,6 +37,7 @@ type Exporter struct {
 	scrapeFailures prometheus.Counter
 	accessesTotal  *prometheus.Desc
 	kBytesTotal    *prometheus.Desc
+	cpuload        prometheus.Gauge
 	uptime         *prometheus.Desc
 	workers        *prometheus.GaugeVec
 	scoreboard     *prometheus.GaugeVec
@@ -58,17 +59,22 @@ func NewExporter(uri string) *Exporter {
 		}),
 		accessesTotal: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "accesses_total"),
-			"Current total apache accesses",
+			"Current total apache accesses (*)",
 			nil,
 			nil),
 		kBytesTotal: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "sent_kilobytes_total"),
-			"Current total kbytes sent",
+			"Current total kbytes sent (*)",
 			nil,
 			nil),
+		cpuload: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "cpuload",
+			Help:      "The current percentage CPU used by each worker and in total by all workers combined (*)",
+		}),
 		uptime: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "uptime_seconds_total"),
-			"Current uptime in seconds",
+			"Current uptime in seconds (*)",
 			nil,
 			nil),
 		workers: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -105,6 +111,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.accessesTotal
 	ch <- e.kBytesTotal
 	ch <- e.uptime
+	e.cpuload.Describe(ch)
 	e.scrapeFailures.Describe(ch)
 	e.workers.Describe(ch)
 	e.scoreboard.Describe(ch)
@@ -200,6 +207,13 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			ch <- prometheus.MustNewConstMetric(e.kBytesTotal, prometheus.CounterValue, val)
+		case key == "CPULoad":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.cpuload.Set(val)
 		case key == "Uptime":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -258,6 +272,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	}
 
+	e.cpuload.Collect(ch)
 	e.workers.Collect(ch)
 	if connectionInfo {
 		e.connections.Collect(ch)

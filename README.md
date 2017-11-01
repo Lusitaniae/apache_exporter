@@ -48,15 +48,17 @@ docker run -d -p 9117:9117 apache_exporter \
 The exporter collects a number of statistics from the server:
 
 ```
-# HELP apache_accesses_total Current total apache accesses
+# HELP apache_accesses_total Current total apache accesses (*)
 # TYPE apache_accesses_total counter
 # HELP apache_scoreboard Apache scoreboard statuses
 # TYPE apache_scoreboard gauge
-# HELP apache_sent_kilobytes_total Current total kbytes sent
+# HELP apache_sent_kilobytes_total Current total kbytes sent (*)
 # TYPE apache_sent_kilobytes_total counter
+# HELP apache_cpu_load CPU Load (*)
+# TYPE apache_cpu_load gauge
 # HELP apache_up Could the apache server be reached
 # TYPE apache_up gauge
-# HELP apache_uptime_seconds_total Current uptime in seconds
+# HELP apache_uptime_seconds_total Current uptime in seconds (*)
 # TYPE apache_uptime_seconds_total counter
 # HELP apache_workers Apache worker statuses
 # TYPE apache_workers gauge
@@ -90,6 +92,7 @@ Process metrics:
 # TYPE process_virtual_memory_bytes gauge
 ```
 
+Metrics marked '(*)' are only available if ExtendedStatus is On in apache webserver configuration. In version 2.3.6, loading mod_status will toggle ExtendedStatus On by default.
 
 ## Author
 
