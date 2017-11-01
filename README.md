@@ -45,7 +45,7 @@ docker run -d -p 9117:9117 apache_exporter \
 
 ## Collectors
 
-The exporter collects a number of statistics from the server:
+Apache metrics:
 
 ```
 # HELP apache_accesses_total Current total apache accesses (*)
@@ -64,7 +64,7 @@ The exporter collects a number of statistics from the server:
 # TYPE apache_workers gauge
 ```
 
-Request metrics:
+Exporter process metrics:
 
 ```
 # HELP http_request_duration_microseconds The HTTP request latencies in microseconds.
@@ -73,11 +73,6 @@ Request metrics:
 # TYPE http_request_size_bytes summary
 # HELP http_response_size_bytes The HTTP response sizes in bytes.
 # TYPE http_response_size_bytes summary
-```
-
-Process metrics:
-
-```
 # HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
 # TYPE process_cpu_seconds_total counter
 # HELP process_max_fds Maximum number of open file descriptors.
