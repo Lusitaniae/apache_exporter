@@ -134,34 +134,33 @@ func splitkv(s string) (string, string) {
 	return strings.TrimSpace(slice[0]), strings.TrimSpace(slice[1])
 }
 
+var scoreboardLabelMap = map[string]string{
+	"_": "idle",
+	"S": "startup",
+	"R": "read",
+	"W": "reply",
+	"K": "keepalive",
+	"D": "dns",
+	"C": "closing",
+	"L": "logging",
+	"G": "graceful_stop",
+	"I": "idle_cleanup",
+	".": "open_slot",
+}
+
 func (e *Exporter) updateScoreboard(scoreboard string) {
 	e.scoreboard.Reset()
+	for _, v := range scoreboardLabelMap {
+		e.scoreboard.WithLabelValues(v)
+	}
+
 	for _, worker_status := range scoreboard {
 		s := string(worker_status)
-		switch {
-		case s == "_":
-			e.scoreboard.WithLabelValues("idle").Inc()
-		case s == "S":
-			e.scoreboard.WithLabelValues("startup").Inc()
-		case s == "R":
-			e.scoreboard.WithLabelValues("read").Inc()
-		case s == "W":
-			e.scoreboard.WithLabelValues("reply").Inc()
-		case s == "K":
-			e.scoreboard.WithLabelValues("keepalive").Inc()
-		case s == "D":
-			e.scoreboard.WithLabelValues("dns").Inc()
-		case s == "C":
-			e.scoreboard.WithLabelValues("closing").Inc()
-		case s == "L":
-			e.scoreboard.WithLabelValues("logging").Inc()
-		case s == "G":
-			e.scoreboard.WithLabelValues("graceful_stop").Inc()
-		case s == "I":
-			e.scoreboard.WithLabelValues("idle_cleanup").Inc()
-		case s == ".":
-			e.scoreboard.WithLabelValues("open_slot").Inc()
+		label, ok := scoreboardLabelMap[s]
+		if !ok {
+			label = s
 		}
+		e.scoreboard.WithLabelValues(label).Inc()
 	}
 }
 

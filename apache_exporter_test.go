@@ -99,9 +99,9 @@ IdleWorkers: 8
 Scoreboard: _W_______K......................................................................................................................................................................................................................................................
 `
 
-	metricCountApache22       = 11
-	metricCountApache24       = 13
-	metricCountApache24Worker = 11
+	metricCountApache22       = 18
+	metricCountApache24       = 22
+	metricCountApache24Worker = 18
 )
 
 func checkApacheStatus(t *testing.T, status string, metricCount int) {
@@ -124,8 +124,12 @@ func checkApacheStatus(t *testing.T, status string, metricCount int) {
 			t.Error("expected metric but got nil")
 		}
 	}
-	if <-ch != nil {
-		t.Error("expected closed channel")
+	extraMetrics := 0
+	for <-ch != nil {
+		extraMetrics++
+	}
+	if extraMetrics > 0 {
+		t.Errorf("expected closed channel, got %d extra metrics", extraMetrics)
 	}
 }
 
