@@ -39,7 +39,7 @@ mod_status configuration (/etc/apache2/mods-enabled/status.conf):
   Require valid-user
 </Location>
 ```
-For the below configuration to avoid 401 the provided scrape_uri should be similar to:
+For the above configuration to avoid 401 the provided scrape_uri should be similar to:
 ```
 http://user:password@localhost/server-status?auto
 ```
