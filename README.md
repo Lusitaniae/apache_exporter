@@ -26,6 +26,12 @@ Help on flags:
 
 Tested on Apache 2.2 and Apache 2.4.
 
+ If your server-status page is secured by http auth, add the credentials to the scrape URL following this example:
+ 
+```
+http://user:password@localhost/server-status?auto
+```
+
 # Using Docker
 
 ## Build
