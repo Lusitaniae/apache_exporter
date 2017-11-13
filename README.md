@@ -26,20 +26,8 @@ Help on flags:
 
 Tested on Apache 2.2 and Apache 2.4.
 
-The use of mod_status may represent a security issue so, if you want to set a user/password authentication the exporter supports this using `user:pass` format on the scrape_uri parameter, example:
-
-mod_status configuration (/etc/apache2/mods-enabled/status.conf):
-```
-<Location /server-status>
-  SetHandler server-status
-  AuthType basic
-  AuthName "Apache Server Status"
-  AuthBasicProvider file
-  AuthUserFile /tmp/apachepasswd
-  Require valid-user
-</Location>
-```
-For the above configuration to avoid 401 the provided scrape_uri should be similar to:
+ If your server-status page is secured by http auth, add the credentials to the scrape URL following this example:
+ 
 ```
 http://user:password@localhost/server-status?auto
 ```
