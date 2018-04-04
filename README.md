@@ -34,7 +34,14 @@ http://user:password@localhost/server-status?auto
 
 # Using Docker
 
-## Build
+## Build the compatible binary
+To make sure that exporter binary created by build job is suitable to run on busybox environment, generate the binary using Makefile definition. Inside project directory run:
+```
+make
+```
+*Please be aware that binary generated using `go get` or `go build` with defaults may not work in busybox/alpine base images.*
+
+## Build image
 
 Run the following commands from the project root directory.
 
