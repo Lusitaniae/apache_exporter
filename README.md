@@ -12,8 +12,6 @@ Help on flags:
 ```
   -insecure
     	Ignore server certificate if using https. (default false)
-  -log.level value
-    	Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal, panic]. (default info)
   -scrape_uri string
     	URI to apache stub status page. (default "http://localhost/server-status/?auto")
   -telemetry.address string
