@@ -38,6 +38,9 @@ type Exporter struct {
 	accessesTotal  *prometheus.Desc
 	kBytesTotal    *prometheus.Desc
 	cpuload        prometheus.Gauge
+	reqPerSec      prometheus.Gauge
+	bytesPerSec    prometheus.Gauge
+	bytesPerReq    prometheus.Gauge
 	uptime         *prometheus.Desc
 	workers        *prometheus.GaugeVec
 	scoreboard     *prometheus.GaugeVec
@@ -71,6 +74,21 @@ func NewExporter(uri string) *Exporter {
 			Namespace: namespace,
 			Name:      "cpuload",
 			Help:      "The current percentage CPU used by each worker and in total by all workers combined (*)",
+		}),
+		reqPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "requests_per_second",
+			Help:      "Requests per second",
+		}),
+		bytesPerSec: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "bytes_per_second",
+			Help:      "Bytes transferred per second",
+		}),
+		bytesPerReq: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "bytes_per_request",
+			Help:      "Bytes transferred per request",
 		}),
 		uptime: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "uptime_seconds_total"),
@@ -112,6 +130,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.kBytesTotal
 	ch <- e.uptime
 	e.cpuload.Describe(ch)
+	e.reqPerSec.Describe(ch)
+	e.bytesPerSec.Describe(ch)
+	e.bytesPerReq.Describe(ch)
 	e.scrapeFailures.Describe(ch)
 	e.workers.Describe(ch)
 	e.scoreboard.Describe(ch)
@@ -213,6 +234,30 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.cpuload.Set(val)
+		case key == "ReqPerSec":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.reqPerSec.Set(val)
+			e.reqPerSec.Collect(ch)
+		case key == "BytesPerSec":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.bytesPerSec.Set(val)
+			e.bytesPerSec.Collect(ch)
+		case key == "BytesPerReq":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.bytesPerReq.Set(val)
+			e.bytesPerReq.Collect(ch)
 		case key == "Uptime":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
