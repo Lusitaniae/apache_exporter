@@ -100,6 +100,13 @@ Exporter process metrics:
 
 Metrics marked '(*)' are only available if ExtendedStatus is On in apache webserver configuration. In version 2.3.6, loading mod_status will toggle ExtendedStatus On by default.
 
+## FAQ
+
+Q. Can you add additional metrics such as reqpersec, bytespersec and bytesperreq?
+
+A. In line with the [best practices](https://prometheus.io/docs/instrumenting/writing_exporters/#drop-less-useful-statistics), the exporter only provides the totals and you should derive rates using [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/).
+
+
 ## Author
 
 The exporter was originally created by [neezgee](https://github.com/neezgee).
