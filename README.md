@@ -103,6 +103,10 @@ Metrics marked '(*)' are only available if ExtendedStatus is On in apache webser
 
 ## FAQ
 
+Q. Is there a Grafana dashboard for this exporter?
+
+A. There's a 3rd party dashboard [here](https://grafana.com/dashboards/3894) which seems to work. 
+
 Q. Can you add additional metrics such as reqpersec, bytespersec and bytesperreq?
 
 A. In line with the [best practices](https://prometheus.io/docs/instrumenting/writing_exporters/#drop-less-useful-statistics), the exporter only provides the totals and you should derive rates using [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/).
