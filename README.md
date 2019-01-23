@@ -1,3 +1,4 @@
+
 # Apache Exporter for Prometheus [![Build Status][buildstatus]][circleci]
 
 [![Docker Repository on Quay](https://quay.io/repository/Lusitaniae/apache-exporter/status)][quay]
@@ -102,10 +103,43 @@ Metrics marked '(*)' are only available if ExtendedStatus is On in apache webser
 
 ## FAQ
 
+Q. Is there a Grafana dashboard for this exporter?
+
+A. There's a 3rd party dashboard [here](https://grafana.com/dashboards/3894) which seems to work. 
+
 Q. Can you add additional metrics such as reqpersec, bytespersec and bytesperreq?
 
 A. In line with the [best practices](https://prometheus.io/docs/instrumenting/writing_exporters/#drop-less-useful-statistics), the exporter only provides the totals and you should derive rates using [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/).
 
+Q. Can I monitor multiple Apache instances? 
+
+A. In line with the [best practices](https://prometheus.io/docs/instrumenting/writing_exporters/#deployment), the answer is no. *Each process being monitored should be accompanied by **one** exporter*. 
+
+We suggest automating configuration and deployment using your favorite tools, e.g. Ansible/Chef/Kubernetes.
+
+Q. Its not working! Apache_up shows as 0
+
+A. When apache_up reports 0 it means the exporter is running however it is not able to connect to Apache. 
+
+Do you have this (or similar) configuration uncommented in your Apache instance?
+```
+<Location "/server-status">
+    SetHandler server-status
+    Require host example.com
+</Location>
+```
+As documented at
+https://httpd.apache.org/docs/2.4/mod/mod_status.html
+
+Are you able to see the stats, if you run this from the Apache instance?
+
+`curl localhost/server-status?auto`
+
+If you run the exporter manually, do you see any errors?
+
+`./apache_exporter`
+
+Please include all this information if you still have issues when creating an issue.
 
 ## Author
 
