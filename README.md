@@ -111,6 +111,11 @@ Q. Can you add additional metrics such as reqpersec, bytespersec and bytesperreq
 
 A. In line with the [best practices](https://prometheus.io/docs/instrumenting/writing_exporters/#drop-less-useful-statistics), the exporter only provides the totals and you should derive rates using [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/).
 
+>   Like that:
+>   - `ReqPerSec` : `rate(apache_accesses_total[5m])`
+>   - `BytesPerSec`: `rate(apache_sent_kilobytes_total[5m])`
+>   - `BytesPerReq`: BytesPerSec / ReqPerSec
+
 Q. Can I monitor multiple Apache instances? 
 
 A. In line with the [best practices](https://prometheus.io/docs/instrumenting/writing_exporters/#deployment), the answer is no. *Each process being monitored should be accompanied by **one** exporter*. 
