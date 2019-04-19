@@ -24,6 +24,7 @@ var (
 	listeningAddress = flag.String("telemetry.address", ":9117", "Address on which to expose metrics.")
 	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 	scrapeURI        = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page.")
+	hostOverride     = flag.String("host_override", "", "Override for HTTP Host header; empty string for no override.")
 	insecure         = flag.Bool("insecure", false, "Ignore server certificate if using https.")
 	showVersion      = flag.Bool("version", false, "Print version information.")
 )
@@ -165,7 +166,14 @@ func (e *Exporter) updateScoreboard(scoreboard string) {
 }
 
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
-	resp, err := e.client.Get(e.URI)
+	req, err := http.NewRequest("GET", e.URI, nil)
+	if *hostOverride != "" {
+		req.Host = *hostOverride
+	}
+	if err != nil {
+		return fmt.Errorf("Error building scraping request: %v", err)
+	}
+	resp, err := e.client.Do(req)
 	if err != nil {
 		ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
 		return fmt.Errorf("Error scraping apache: %v", err)
