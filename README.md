@@ -1,6 +1,8 @@
 
 # Apache Exporter for Prometheus [![Build Status][buildstatus]][circleci]
 
+[![GitHub release](https://img.shields.io/github/release/Lusitaniae/apache_exporter.svg)][release]
+![GitHub Downloads](https://img.shields.io/github/downloads/Lusitaniae/apache_exporter/total.svg)
 [![Docker Repository on Quay](https://quay.io/repository/Lusitaniae/apache-exporter/status)][quay]
 [![Docker Pulls](https://img.shields.io/docker/pulls/lusotycoon/apache-exporter.svg?maxAge=604800)][hub]
 
@@ -160,3 +162,4 @@ The exporter was originally created by [neezgee](https://github.com/neezgee).
 [quay]: https://quay.io/repository/Lusitaniae/apache-exporter
 [circleci]: https://circleci.com/gh/Lusitaniae/apache_exporter
 [hub]: https://hub.docker.com/r/lusotycoon/apache-exporter/
+[release]: https://github.com/Lusitaniae/apache_exporter/releases/latest
