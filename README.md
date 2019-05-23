@@ -31,6 +31,11 @@ Tested on Apache 2.2 and Apache 2.4.
 http://user:password@localhost/server-status?auto
 ```
 
+Override host name by runnning
+```
+./apache_exporter -host_override=example.com
+```
+
 # Using Docker
 
 ## Build the compatible binary
