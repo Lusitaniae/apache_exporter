@@ -300,6 +300,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 func main() {
+	flag.VisitAll(func(f *flag.Flag) {
+		if value := os.Getenv(strings.ToUpper(f.Name)); value != "" {
+			f.Value.Set(value)
+		}
+	})
 	flag.Parse()
 
 	if *showVersion {
