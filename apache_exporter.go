@@ -12,8 +12,12 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 const (
@@ -27,6 +31,7 @@ var (
 	hostOverride     = flag.String("host_override", "", "Override for HTTP Host header; empty string for no override.")
 	insecure         = flag.Bool("insecure", false, "Ignore server certificate if using https.")
 	showVersion      = flag.Bool("version", false, "Print version information.")
+	gracefulStop     = make(chan os.Signal)
 )
 
 type Exporter struct {
@@ -301,6 +306,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 func main() {
 	flag.Parse()
+	// listen to termination signals from the OS
+	signal.Notify(gracefulStop, syscall.SIGTERM)
+	signal.Notify(gracefulStop, syscall.SIGINT)
+	signal.Notify(gracefulStop, syscall.SIGHUP)
+	signal.Notify(gracefulStop, syscall.SIGQUIT)
 
 	if *showVersion {
 		fmt.Fprintln(os.Stdout, version.Print("apache_exporter"))
@@ -314,7 +324,18 @@ func main() {
 	log.Infoln("Build context", version.BuildContext())
 	log.Infof("Starting Server: %s", *listeningAddress)
 
-	http.Handle(*metricsEndpoint, prometheus.Handler())
+	// listener for the termination signals from the OS
+	go func() {
+		log.Infof("listening and wait for graceful stop")
+		sig := <-gracefulStop
+		log.Infof("caught sig: %+v. Wait 2 seconds...", sig)
+		time.Sleep(2 * time.Second)
+		log.Infof("Terminate apache-exporter on port: %s", *listeningAddress)
+		os.Exit(0)
+	}()
+
+
+	http.Handle(*metricsEndpoint, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			 <head><title>Apache Exporter</title></head>
