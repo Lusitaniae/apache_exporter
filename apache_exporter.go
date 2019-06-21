@@ -334,7 +334,6 @@ func main() {
 		os.Exit(0)
 	}()
 
-
 	http.Handle(*metricsEndpoint, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
