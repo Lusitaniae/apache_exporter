@@ -47,6 +47,13 @@ make
 ```
 *Please be aware that binary generated using `go get` or `go build` with defaults may not work in busybox/alpine base images.*
 
+Alternively, a go docker container can be used to generate the binary.
+
+Pick an appropriate go image from https://hub.docker.com/_/golang. Inside the project directory run:
+```
+docker run --rm -v <project home>:/usr/local/go/src/github.com/Lusitaniae/apache_exporter -w /usr/local/go/src/github.com/Lusitaniae/apache_exporter <go docker image name> make
+```
+
 ## Build image
 
 Run the following commands from the project root directory.
