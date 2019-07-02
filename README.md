@@ -12,18 +12,21 @@ With working golang environment it can be built with `go get`.  There is a [good
 
 Help on flags:
 
-```
-  -insecure
-    	Ignore server certificate if using https. (default false)
-  -scrape_uri string
-    	URI to apache stub status page. (default "http://localhost/server-status/?auto")
-  -telemetry.address string
-    	Address on which to expose metrics. (default ":9117")
-  -telemetry.endpoint string
-    	Path under which to expose metrics. (default "/metrics")
-  -version
-    	Version of the Apache exporter.
-```
+<pre>
+  -h, --help
+      --telemetry.address=":9117"
+                          Address on which to expose metrics.
+      --telemetry.endpoint="/metrics"
+                          Path under which to expose metrics.
+      --scrape_uri="http://localhost/server-status/?auto"
+                          URI to apache stub status page.
+      --host_override=""  Override for HTTP Host header; empty string for no override.
+      --insecure          Ignore server certificate if using https.
+      --log.level="info"  Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]
+      --log.format="logger:stderr"
+                          Set the log target and format. Example: "logger:syslog?appname=bob&local=7" or "logger:stdout?json=true"
+      --version           Show application version.
+</pre>
 
 Tested on Apache 2.2 and Apache 2.4.
 
@@ -35,7 +38,7 @@ http://user:password@localhost/server-status?auto
 
 Override host name by runnning
 ```
-./apache_exporter -host_override=example.com
+./apache_exporter --host_override=example.com
 ```
 
 # Using Docker
@@ -47,7 +50,7 @@ make
 ```
 *Please be aware that binary generated using `go get` or `go build` with defaults may not work in busybox/alpine base images.*
 
-Alternively, a go docker container can be used to generate the binary.
+Another option is to use a docker go container to generate the binary.
 
 Pick an appropriate go image from https://hub.docker.com/_/golang. Inside the project directory run:
 ```
@@ -66,7 +69,7 @@ docker build -t apache_exporter .
 
 ```
 docker run -d -p 9117:9117 apache_exporter \
-  -scrape_uri "https://your.server.com/server-status/?auto"
+  --scrape_uri="https://your.server.com/server-status/?auto"
 ```
 
 ## Collectors

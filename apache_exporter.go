@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"os/signal"
 	"syscall"
 	"time"
@@ -25,12 +25,11 @@ const (
 )
 
 var (
-	listeningAddress = flag.String("telemetry.address", ":9117", "Address on which to expose metrics.")
-	metricsEndpoint  = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
-	scrapeURI        = flag.String("scrape_uri", "http://localhost/server-status/?auto", "URI to apache stub status page.")
-	hostOverride     = flag.String("host_override", "", "Override for HTTP Host header; empty string for no override.")
-	insecure         = flag.Bool("insecure", false, "Ignore server certificate if using https.")
-	showVersion      = flag.Bool("version", false, "Print version information.")
+	listeningAddress = kingpin.Flag("telemetry.address", "Address on which to expose metrics.").Default(":9117").String()
+	metricsEndpoint  = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
+	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
+	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
+	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
 	gracefulStop     = make(chan os.Signal)
 )
 
@@ -194,6 +193,8 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		return fmt.Errorf("Status %s (%d): %s", resp.Status, resp.StatusCode, data)
 	}
 
+	log.Debugf("Raw collected data: %s", data)
+
 	lines := strings.Split(string(data), "\n")
 
 	connectionInfo := false
@@ -305,22 +306,31 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 func main() {
-	flag.Parse()
+
+	// Parse flags
+	log.AddFlags(kingpin.CommandLine)
+	kingpin.Version(version.Print("apache_exporter"))
+	kingpin.HelpFlag.Short('h')
+	kingpin.Parse()
+
 	// listen to termination signals from the OS
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 	signal.Notify(gracefulStop, syscall.SIGHUP)
 	signal.Notify(gracefulStop, syscall.SIGQUIT)
 
-	if *showVersion {
-		fmt.Fprintln(os.Stdout, version.Print("apache_exporter"))
-		os.Exit(0)
-	}
 	exporter := NewExporter(*scrapeURI)
 	prometheus.MustRegister(exporter)
 	prometheus.MustRegister(version.NewCollector("apache_exporter"))
 
 	log.Infoln("Starting apache_exporter", version.Info())
+	log.Debugf("With flags:\n\t"+
+		"telemetry.address: %s\n\t"+
+		"telemetry.endpoint: %s\n\t"+
+		"scrape_uri: %s\n\t"+
+		"host_override: %s\n\t"+
+		"insecure: %t",
+		*listeningAddress, *metricsEndpoint, *scrapeURI, *hostOverride, *insecure)
 	log.Infoln("Build context", version.BuildContext())
 	log.Infof("Starting Server: %s", *listeningAddress)
 
