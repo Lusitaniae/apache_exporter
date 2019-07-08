@@ -193,8 +193,6 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		return fmt.Errorf("Status %s (%d): %s", resp.Status, resp.StatusCode, data)
 	}
 
-	log.Debugf("Raw collected data: %s", data)
-
 	lines := strings.Split(string(data), "\n")
 
 	connectionInfo := false
@@ -324,13 +322,6 @@ func main() {
 	prometheus.MustRegister(version.NewCollector("apache_exporter"))
 
 	log.Infoln("Starting apache_exporter", version.Info())
-	log.Debugf("With flags:\n\t"+
-		"telemetry.address: %s\n\t"+
-		"telemetry.endpoint: %s\n\t"+
-		"scrape_uri: %s\n\t"+
-		"host_override: %s\n\t"+
-		"insecure: %t",
-		*listeningAddress, *metricsEndpoint, *scrapeURI, *hostOverride, *insecure)
 	log.Infoln("Build context", version.BuildContext())
 	log.Infof("Starting Server: %s", *listeningAddress)
 
