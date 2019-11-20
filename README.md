@@ -163,6 +163,10 @@ If you run the exporter manually, do you see any errors?
 
 Please include all this information if you still have issues when creating an issue.
 
+Q. There seem to be missing metrics! I can only see apache_up and apache_cpuload.
+
+A. Make sure that you add `?auto` at the end of the scrape_uri.
+
 ## Author
 
 The exporter was originally created by [neezgee](https://github.com/neezgee).
