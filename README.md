@@ -93,29 +93,6 @@ Apache metrics:
 # TYPE apache_workers gauge
 ```
 
-Exporter process metrics:
-
-```
-# HELP http_request_duration_microseconds The HTTP request latencies in microseconds.
-# TYPE http_request_duration_microseconds summary
-# HELP http_request_size_bytes The HTTP request sizes in bytes.
-# TYPE http_request_size_bytes summary
-# HELP http_response_size_bytes The HTTP response sizes in bytes.
-# TYPE http_response_size_bytes summary
-# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
-# TYPE process_cpu_seconds_total counter
-# HELP process_max_fds Maximum number of open file descriptors.
-# TYPE process_max_fds gauge
-# HELP process_open_fds Number of open file descriptors.
-# TYPE process_open_fds gauge
-# HELP process_resident_memory_bytes Resident memory size in bytes.
-# TYPE process_resident_memory_bytes gauge
-# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
-# TYPE process_start_time_seconds gauge
-# HELP process_virtual_memory_bytes Virtual memory size in bytes.
-# TYPE process_virtual_memory_bytes gauge
-```
-
 Metrics marked '(*)' are only available if ExtendedStatus is On in apache webserver configuration. In version 2.3.6, loading mod_status will toggle ExtendedStatus On by default.
 
 ## FAQ
