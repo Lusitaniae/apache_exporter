@@ -25,6 +25,12 @@ const (
 )
 
 var (
+	Version   string
+	Branch    string
+	BuildDate string
+)
+
+var (
 	listeningAddress = kingpin.Flag("telemetry.address", "Address on which to expose metrics.").Default(":9117").String()
 	metricsEndpoint  = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
 	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
@@ -42,11 +48,14 @@ type Exporter struct {
 	scrapeFailures prometheus.Counter
 	accessesTotal  *prometheus.Desc
 	kBytesTotal    *prometheus.Desc
+	durationTotal  *prometheus.Desc
 	cpuload        prometheus.Gauge
 	uptime         *prometheus.Desc
 	workers        *prometheus.GaugeVec
 	scoreboard     *prometheus.GaugeVec
 	connections    *prometheus.GaugeVec
+
+	apacheVersion *prometheus.Desc
 }
 
 func NewExporter(uri string) *Exporter {
@@ -70,6 +79,11 @@ func NewExporter(uri string) *Exporter {
 		kBytesTotal: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "sent_kilobytes_total"),
 			"Current total kbytes sent (*)",
+			nil,
+			nil),
+		durationTotal: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "duration_total"),
+			"Duration total of all registered requests",
 			nil,
 			nil),
 		cpuload: prometheus.NewGauge(prometheus.GaugeOpts{
@@ -103,6 +117,11 @@ func NewExporter(uri string) *Exporter {
 		},
 			[]string{"state"},
 		),
+		apacheVersion: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "version"),
+			"Server Version Long",
+			[]string{"version"},
+			nil),
 		client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure},
@@ -175,12 +194,12 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		req.Host = *hostOverride
 	}
 	if err != nil {
-		return fmt.Errorf("Error building scraping request: %v", err)
+		return fmt.Errorf("error building scraping request: %v", err)
 	}
 	resp, err := e.client.Do(req)
 	if err != nil {
 		ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
-		return fmt.Errorf("Error scraping apache: %v", err)
+		return fmt.Errorf("error scraping apache: %v", err)
 	}
 	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 1)
 
@@ -190,7 +209,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		if err != nil {
 			data = []byte(err.Error())
 		}
-		return fmt.Errorf("Status %s (%d): %s", resp.Status, resp.StatusCode, data)
+		return fmt.Errorf("status %s (%d): %s", resp.Status, resp.StatusCode, data)
 	}
 
 	lines := strings.Split(string(data), "\n")
@@ -211,6 +230,19 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			ch <- prometheus.MustNewConstMetric(e.accessesTotal, prometheus.CounterValue, val)
+		case key == "ServerVersion":
+			var minVersion string
+
+			minVersion = strings.Split(v, "/")[1]
+			minVersion = strings.Split(minVersion, " ")[0]
+			minVersion = strings.Join(strings.Split(minVersion, ".")[0:2], ".")
+
+			val, err := strconv.ParseFloat(minVersion, 64)
+			if err != nil {
+				return err
+			}
+
+			ch <- prometheus.MustNewConstMetric(e.apacheVersion, prometheus.CounterValue, val, v)
 		case key == "Total kBytes":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -218,6 +250,13 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			ch <- prometheus.MustNewConstMetric(e.kBytesTotal, prometheus.CounterValue, val)
+		case key == "Total Duration":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			ch <- prometheus.MustNewConstMetric(e.durationTotal, prometheus.CounterValue, val)
 		case key == "CPULoad":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -307,7 +346,7 @@ func main() {
 
 	// Parse flags
 	log.AddFlags(kingpin.CommandLine)
-	kingpin.Version(version.Print("apache_exporter"))
+	kingpin.Version(Version)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
@@ -324,6 +363,7 @@ func main() {
 	log.Infoln("Starting apache_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 	log.Infof("Starting Server: %s", *listeningAddress)
+	log.Infof("Collect from: %s", *scrapeURI)
 
 	// listener for the termination signals from the OS
 	go func() {
@@ -337,7 +377,7 @@ func main() {
 
 	http.Handle(*metricsEndpoint, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		_, _ = w.Write([]byte(`<html>
 			 <head><title>Apache Exporter</title></head>
 			 <body>
 			 <h1>Apache Exporter</h1>

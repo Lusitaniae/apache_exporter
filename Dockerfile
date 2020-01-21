@@ -1,6 +1,22 @@
-FROM quay.io/prometheus/busybox:latest
+FROM golang:1.13-alpine as builder
 
-COPY apache_exporter /bin/apache_exporter
+# Source https://github.com/Lusitaniae/apache_exporter
 
-ENTRYPOINT ["/bin/apache_exporter"]
-EXPOSE     9117
+WORKDIR /go/apache-exporter
+
+ARG ALPINE_MIRROR=https://uk.alpinelinux.org
+
+RUN sh -c "sed -i -e 's#http://dl-cdn.alpinelinux.org#${ALPINE_MIRROR}#g' /etc/apk/repositories" \
+    && echo ${ALPINE_MIRROR}/alpine/edge/community/ >> /etc/apk/repositories \
+    && apk add --no-cache --update git
+
+COPY . /go/apache-exporter
+RUN GO111MODULE=on go build -ldflags "-X main.Version=$(git describe --tags --abbrev=0)" -o /go/bin/apache_exporter
+
+FROM alpine
+
+COPY --from=builder /go/bin/apache_exporter /apache_exporter
+
+EXPOSE 9117
+
+ENTRYPOINT ["/apache_exporter"]
