@@ -52,6 +52,7 @@ type Exporter struct {
 	workers        *prometheus.GaugeVec
 	scoreboard     *prometheus.GaugeVec
 	connections    *prometheus.GaugeVec
+	serverLoad    *prometheus.GaugeVec
 
 	apacheVersion *prometheus.Desc
 }
@@ -120,6 +121,13 @@ func NewExporter(uri string) *Exporter {
 			"Server Version Long",
 			[]string{"version"},
 			nil),
+		serverLoad: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "server_load",
+			Help:      "Load average of the server / container",
+		},
+			[]string{"time_minute"},
+		),
 		client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure},
@@ -138,6 +146,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.cpuload.Describe(ch)
 	e.scrapeFailures.Describe(ch)
 	e.workers.Describe(ch)
+	e.serverLoad.Describe(ch)
 	e.scoreboard.Describe(ch)
 	e.connections.Describe(ch)
 }
@@ -215,6 +224,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	lines := strings.Split(string(data), "\n")
 
 	connectionInfo := false
+	//connectionInfo := false
 
 	for _, l := range lines {
 		key, v := splitkv(l)
@@ -285,6 +295,27 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.workers.WithLabelValues("idle").Set(val)
+		case key == "Load1":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.serverLoad.WithLabelValues("1").Set(val)
+		case key == "Load5":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.serverLoad.WithLabelValues("5").Set(val)
+		case key == "Load15":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.serverLoad.WithLabelValues("15").Set(val)
 		case key == "Scoreboard":
 			e.updateScoreboard(v)
 			e.scoreboard.Collect(ch)
@@ -324,6 +355,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	e.cpuload.Collect(ch)
 	e.workers.Collect(ch)
+	e.serverLoad.Collect(ch)
 	if connectionInfo {
 		e.connections.Collect(ch)
 	}
