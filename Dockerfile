@@ -11,7 +11,8 @@ RUN sh -c "sed -i -e 's#http://dl-cdn.alpinelinux.org#${ALPINE_MIRROR}#g' /etc/a
     && apk add --no-cache --update git
 
 COPY . /go/apache-exporter
-RUN GO111MODULE=on go build -ldflags "-X main.Version=$(git describe --tags --abbrev=0)" -o /go/bin/apache_exporter
+RUN GO111MODULE=on go build -ldflags "-X main.Version=$(git describe --tags --abbrev=0) -X github.com/prometheus/common/version.Version=$(git describe --tags --abbrev=0) -X github.com/prometheus/common/version.Revision=$(git rev-parse HEAD)" -o /go/bin/apache_exporter
+#RUN GO111MODULE=on go build -ldflags "-X main.Version=$(git describe --tags --abbrev=0) -X github.com/prometheus/common/version.Version=$(git describe --tags --abbrev=0) -X github.com/prometheus/common/version.Revision=$(git rev-parse HEAD) -X github.com/prometheus/common/version.BuildDate=$(date)" -o /go/bin/apache_exporter
 
 FROM alpine
 

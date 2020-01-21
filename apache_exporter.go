@@ -26,8 +26,6 @@ const (
 
 var (
 	Version   string
-	Branch    string
-	BuildDate string
 )
 
 var (
@@ -135,6 +133,8 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.accessesTotal
 	ch <- e.kBytesTotal
 	ch <- e.uptime
+	ch <- e.durationTotal
+	ch <- e.apacheVersion
 	e.cpuload.Describe(ch)
 	e.scrapeFailures.Describe(ch)
 	e.workers.Describe(ch)
