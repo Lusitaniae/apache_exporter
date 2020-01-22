@@ -102,8 +102,8 @@ Scoreboard: _W_______K..........................................................
 `
 
 	metricCountApache22       = 18
-	metricCountApache24       = 27
-	metricCountApache24Worker = 23
+	metricCountApache24       = 24
+	metricCountApache24Worker = 20
 )
 
 func checkApacheStatus(t *testing.T, status string, metricCount int) {
