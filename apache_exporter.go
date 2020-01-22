@@ -25,10 +25,6 @@ const (
 )
 
 var (
-	Version   string
-)
-
-var (
 	listeningAddress = kingpin.Flag("telemetry.address", "Address on which to expose metrics.").Default(":9117").String()
 	metricsEndpoint  = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
 	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
@@ -378,7 +374,7 @@ func main() {
 
 	// Parse flags
 	log.AddFlags(kingpin.CommandLine)
-	kingpin.Version(Version)
+	kingpin.Version(version.Print("apache_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
