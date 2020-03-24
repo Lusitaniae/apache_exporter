@@ -91,6 +91,10 @@ Apache metrics:
 # TYPE apache_uptime_seconds_total counter
 # HELP apache_workers Apache worker statuses
 # TYPE apache_workers gauge
+# HELP apache_verion Apache server version
+# TYPE apache_verion gauge
+# HELP apache_duration_total Total duration of all registered requests
+# TYPE apache_duration_total gauge
 ```
 
 Metrics marked '(*)' are only available if ExtendedStatus is On in apache webserver configuration. In version 2.3.6, loading mod_status will toggle ExtendedStatus On by default.

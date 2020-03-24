@@ -24,6 +24,7 @@ Load5: 0.02
 Load15: 0.00
 Total Accesses: 131
 Total kBytes: 138
+Total Duration: 12930
 CPUUser: .25
 CPUSystem: .15
 CPUChildrenUser: 0
@@ -57,6 +58,7 @@ Load5: 0.01
 Load15: 0.05
 Total Accesses: 10
 Total kBytes: 38
+Total Duration: 12930
 CPUUser: .05
 CPUSystem: 0
 CPUChildrenUser: 0
@@ -100,8 +102,8 @@ Scoreboard: _W_______K..........................................................
 `
 
 	metricCountApache22       = 18
-	metricCountApache24       = 22
-	metricCountApache24Worker = 18
+	metricCountApache24       = 24
+	metricCountApache24Worker = 20
 )
 
 func checkApacheStatus(t *testing.T, status string, metricCount int) {
