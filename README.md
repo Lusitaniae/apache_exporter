@@ -91,8 +91,8 @@ Apache metrics:
 # TYPE apache_uptime_seconds_total counter
 # HELP apache_workers Apache worker statuses
 # TYPE apache_workers gauge
-# HELP apache_verion Apache server version
-# TYPE apache_verion gauge
+# HELP apache_version Apache server version
+# TYPE apache_version gauge
 # HELP apache_duration_total Total duration of all registered requests
 # TYPE apache_duration_total gauge
 ```
