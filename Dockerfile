@@ -1,6 +1,18 @@
-FROM quay.io/prometheus/busybox:latest
+# Go container to build apache-exporter
+FROM golang:1.14.4 as go
 
-COPY apache_exporter /bin/apache_exporter
+WORKDIR /exporter
+
+COPY . .
+
+RUN make
+
+# Second stage, conatiner with the exporter
+FROM quay.io/prometheus/busybox:1.31.1
+
+COPY --from=go /exporter/apache_exporter /bin/apache_exporter
+
+EXPOSE     9117
 
 ENTRYPOINT ["/bin/apache_exporter"]
-EXPOSE     9117
+
