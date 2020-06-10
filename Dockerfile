@@ -12,7 +12,6 @@ FROM busybox:1.31.1
 
 COPY --from=go /exporter/apache_exporter /bin/apache_exporter
 
-EXPOSE     9117
+EXPOSE 9117
 
 ENTRYPOINT ["/bin/apache_exporter"]
-
