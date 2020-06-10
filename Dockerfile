@@ -8,7 +8,7 @@ COPY . .
 RUN make
 
 # Second stage, conatiner with the exporter
-FROM quay.io/prometheus/busybox:1.31.1
+FROM busybox:1.31.1
 
 COPY --from=go /exporter/apache_exporter /bin/apache_exporter
 
