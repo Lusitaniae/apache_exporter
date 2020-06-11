@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,12 +26,13 @@ const (
 )
 
 var (
-	listeningAddress = kingpin.Flag("telemetry.address", "Address on which to expose metrics.").Default(":9117").String()
-	metricsEndpoint  = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
-	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
-	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
-	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
-	gracefulStop     = make(chan os.Signal)
+	listeningAddress  = kingpin.Flag("telemetry.address", "Address on which to expose metrics.").Default(":9117").String()
+	metricsEndpoint   = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
+	scrapeURI         = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
+	hostOverride      = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
+	insecure          = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
+	configTestEnabled = kingpin.Flag("configtest.enable", "Enabled configtest metrics.").Bool()
+	gracefulStop      = make(chan os.Signal)
 )
 
 type Exporter struct {
@@ -38,16 +40,18 @@ type Exporter struct {
 	mutex  sync.Mutex
 	client *http.Client
 
-	up             *prometheus.Desc
-	scrapeFailures prometheus.Counter
-	accessesTotal  *prometheus.Desc
-	kBytesTotal    *prometheus.Desc
-	durationTotal  *prometheus.Desc
-	cpuload        prometheus.Gauge
-	uptime         *prometheus.Desc
-	workers        *prometheus.GaugeVec
-	scoreboard     *prometheus.GaugeVec
-	connections    *prometheus.GaugeVec
+	up                                  *prometheus.Desc
+	scrapeFailures                      prometheus.Counter
+	accessesTotal                       *prometheus.Desc
+	kBytesTotal                         *prometheus.Desc
+	durationTotal                       *prometheus.Desc
+	cpuload                             prometheus.Gauge
+	uptime                              *prometheus.Desc
+	workers                             *prometheus.GaugeVec
+	scoreboard                          *prometheus.GaugeVec
+	connections                         *prometheus.GaugeVec
+	configTestLastCheckSuccess          prometheus.Gauge
+	configTestLastCheckSuccessTimestamp prometheus.Gauge
 
 	apacheVersion *prometheus.Desc
 }
@@ -111,6 +115,16 @@ func NewExporter(uri string) *Exporter {
 		},
 			[]string{"state"},
 		),
+		configTestLastCheckSuccess: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "configtest_last_check_successful",
+			Help:      "Whether the last configuration reload attempt was successful.",
+		}),
+		configTestLastCheckSuccessTimestamp: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "configtest_last_check_success_timestamp_seconds",
+			Help:      "Timestamp of the last successful configuration reload.",
+		}),
 		apacheVersion: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "version"),
 			"Apache server version",
@@ -122,6 +136,18 @@ func NewExporter(uri string) *Exporter {
 			},
 		},
 	}
+}
+
+// Run `apachectl -t` and use return code to determine
+// if config is valid or not
+func (e *Exporter) getConfigTestStatus() int {
+	cmd := exec.Command("apachectl", "-t")
+	if err := cmd.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			return exitError.ExitCode()
+		}
+	}
+	return 0
 }
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
@@ -317,6 +343,17 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			connectionInfo = true
 		}
 
+	}
+
+	if *configTestEnabled {
+		if e.getConfigTestStatus() == 0 {
+			e.configTestLastCheckSuccess.Set(1)
+			e.configTestLastCheckSuccessTimestamp.SetToCurrentTime()
+		} else {
+			e.configTestLastCheckSuccess.Set(0)
+		}
+		e.configTestLastCheckSuccess.Collect(ch)
+		e.configTestLastCheckSuccessTimestamp.Collect(ch)
 	}
 
 	e.cpuload.Collect(ch)
