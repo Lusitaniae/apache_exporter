@@ -93,8 +93,8 @@ Apache metrics:
 # TYPE apache_workers gauge
 # HELP apache_version Apache server version
 # TYPE apache_version gauge
-# HELP apache_duration_total Total duration of all registered requests
-# TYPE apache_duration_total gauge
+# HELP apache_duration_ms_total Total duration of all registered requests
+# TYPE apache_duration_ms_total gauge
 ```
 
 Metrics marked '(*)' are only available if ExtendedStatus is On in apache webserver configuration. In version 2.3.6, loading mod_status will toggle ExtendedStatus On by default.
