@@ -28,6 +28,15 @@ Help on flags:
       --version           Show application version.
 </pre>
 
+Default values can be changed by environment variables:
+<pre>
+TELEMETRY_ADDRESS
+TELEMETRY_ENDPOINT
+SCRAPE_URI
+HOST_OVERRIDE
+INSECURE (true or false)
+</pre>
+
 Tested on Apache 2.2 and Apache 2.4.
 
  If your server-status page is secured by http auth, add the credentials to the scrape URL following this example:

@@ -24,12 +24,20 @@ const (
 	namespace = "apache" // For Prometheus metrics.
 )
 
+func getDefaultFromEnv(environment, defaultValue string) string {
+	value, found := os.LookupEnv(environment)
+	if found {
+		return value
+	}
+	return defaultValue
+}
+
 var (
-	listeningAddress = kingpin.Flag("telemetry.address", "Address on which to expose metrics.").Default(":9117").String()
-	metricsEndpoint  = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
-	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
-	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
-	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
+	listeningAddress = kingpin.Flag("telemetry.address", "Address on which to expose metrics.").Default(getDefaultFromEnv("TELEMETRY_ADDRESS", ":9117")).String()
+	metricsEndpoint  = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default(getDefaultFromEnv("TELEMETRY_ENDPOINT", "/metrics")).String()
+	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default(getDefaultFromEnv("SCRAPE_URI", "http://localhost/server-status/?auto")).String()
+	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default(getDefaultFromEnv("HOST_OVERRIDE", "")).String()
+	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Default(getDefaultFromEnv("INSECURE", "false")).Bool()
 	gracefulStop     = make(chan os.Signal)
 )
 
