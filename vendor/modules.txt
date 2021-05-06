@@ -15,8 +15,6 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/google/go-querystring v1.1.0
-## explicit
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/prometheus/client_golang v1.10.0
@@ -37,15 +35,9 @@ github.com/prometheus/common/version
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/prometheus/promu v0.12.0
-## explicit
 # github.com/sirupsen/logrus v1.8.1
 ## explicit
 github.com/sirupsen/logrus
-# golang.org/x/net v0.0.0-20210505214959-0714010a04ed
-## explicit
-# golang.org/x/oauth2 v0.0.0-20210427180440-81ed05c6b58c
-## explicit
 # golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6
 ## explicit
 golang.org/x/sys/internal/unsafeheader
@@ -53,7 +45,7 @@ golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc/eventlog
-# google.golang.org/appengine v1.6.7
+# golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 ## explicit
 # google.golang.org/protobuf v1.26.0
 google.golang.org/protobuf/encoding/prototext
@@ -89,3 +81,5 @@ google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/alecthomas/kingpin.v2 v2.2.6
 ## explicit
 gopkg.in/alecthomas/kingpin.v2
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
