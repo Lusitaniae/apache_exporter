@@ -99,6 +99,81 @@ CacheRemoveHitCount: 0
 CacheRemoveMissCount: 0
 `
 
+	apache24EventProxyStatus = `localhost
+ServerVersion: Apache/2.4.23 (Unix)
+ServerMPM: event
+Server Built: Jul 29 2016 04:26:14
+CurrentTime: Friday, 29-Jul-2016 14:06:15 UTC
+RestartTime: Friday, 29-Jul-2016 13:58:49 UTC
+ParentServerConfigGeneration: 1
+ParentServerMPMGeneration: 0
+ServerUptimeSeconds: 445
+ServerUptime: 7 minutes 25 seconds
+Load1: 0.02
+Load5: 0.02
+Load15: 0.00
+Total Accesses: 131
+Total kBytes: 138
+Total Duration: 12930
+CPUUser: .25
+CPUSystem: .15
+CPUChildrenUser: 0
+CPUChildrenSystem: 0
+CPULoad: .0898876
+Uptime: 445
+ReqPerSec: .294382
+BytesPerSec: 317.555
+BytesPerReq: 1078.72
+DurationPerReq: 98.7022
+BusyWorkers: 1
+IdleWorkers: 74
+Processes: 5
+Stopping: 0
+ConnsTotal: 0
+ConnsAsyncWriting: 0
+ConnsAsyncKeepAlive: 0
+ConnsAsyncClosing: 0
+Scoreboard: _W___
+ProxyBalancer[0]Name: balancer://myproxy1
+ProxyBalancer[0]Worker[0]Name: https://app-01:9143
+ProxyBalancer[0]Worker[0]Status: Init Ok
+ProxyBalancer[0]Worker[0]Elected: 5808
+ProxyBalancer[0]Worker[0]Busy: 0
+ProxyBalancer[0]Worker[0]Sent: 5588K
+ProxyBalancer[0]Worker[0]Rcvd: 8335K
+ProxyBalancer[0]Worker[1]Name: https://app-02:9143
+ProxyBalancer[0]Worker[1]Status: Init Ok
+ProxyBalancer[0]Worker[1]Elected: 5722
+ProxyBalancer[0]Worker[1]Busy: 0
+ProxyBalancer[0]Worker[1]Sent: 5167K
+ProxyBalancer[0]Worker[1]Rcvd: 8267K
+ProxyBalancer[0]Worker[2]Name: https://app-03:9143
+ProxyBalancer[0]Worker[2]Status: Init Ok
+ProxyBalancer[0]Worker[2]Elected: 5842
+ProxyBalancer[0]Worker[2]Busy: 0
+ProxyBalancer[0]Worker[2]Sent: 5432K
+ProxyBalancer[0]Worker[2]Rcvd: 8367K
+ProxyBalancer[0]Worker[3]Name: https://app-04:9143
+ProxyBalancer[0]Worker[3]Status: Init Ok
+ProxyBalancer[0]Worker[3]Elected: 5720
+ProxyBalancer[0]Worker[3]Busy: 0
+ProxyBalancer[0]Worker[3]Sent: 5576K
+ProxyBalancer[0]Worker[3]Rcvd: 8175K
+ProxyBalancer[1]Name: balancer://myproxy2
+ProxyBalancer[1]Worker[0]Name: https://app-01:8143
+ProxyBalancer[1]Worker[0]Status: Init Ok
+ProxyBalancer[1]Worker[0]Elected: 5808
+ProxyBalancer[1]Worker[0]Busy: 0
+ProxyBalancer[1]Worker[0]Sent: 5588K
+ProxyBalancer[1]Worker[0]Rcvd: 8335K
+ProxyBalancer[1]Worker[1]Name: https://app-02:8143
+ProxyBalancer[1]Worker[1]Status: Init Ok
+ProxyBalancer[1]Worker[1]Elected: 5722
+ProxyBalancer[1]Worker[1]Busy: 0
+ProxyBalancer[1]Worker[1]Sent: 5167K
+ProxyBalancer[1]Worker[1]Rcvd: 8267K
+`
+
 	apache24WorkerStatus = `localhost
 ServerVersion: Apache/2.4.23 (Unix) OpenSSL/1.0.2h
 ServerMPM: worker
@@ -173,11 +248,12 @@ IdleWorkers: 8
 Scoreboard: _W_______K......................................................................................................................................................................................................................................................
 `
 
-	metricCountApache22         = 19
-	metricCountApache24Event    = 36
-	metricCountApache24EventTLS = 36
-	metricCountApache24Worker   = 30
-	metricCountApache24Prefork  = 30
+	metricCountApache22           = 19
+	metricCountApache24Event      = 36
+	metricCountApache24EventTLS   = 36
+	metricCountApache24EventProxy = 66
+	metricCountApache24Worker     = 30
+	metricCountApache24Prefork    = 30
 )
 
 func checkApacheStatus(t *testing.T, status string, metricCount int) {
@@ -219,6 +295,10 @@ func TestApache24EventStatus(t *testing.T) {
 
 func TestApache24EventTLSStatus(t *testing.T) {
 	checkApacheStatus(t, apache24EventTLSStatus, metricCountApache24EventTLS)
+}
+
+func TestApache24EventProxyStatus(t *testing.T) {
+	checkApacheStatus(t, apache24EventProxyStatus, metricCountApache24EventProxy)
 }
 
 func TestApache24WorkerStatus(t *testing.T) {

@@ -38,22 +38,27 @@ type Exporter struct {
 	mutex  sync.Mutex
 	client *http.Client
 
-	up             *prometheus.Desc
-	scrapeFailures prometheus.Counter
-	apacheVersion  *prometheus.Desc
-	apacheInfo     *prometheus.GaugeVec
-	generation     *prometheus.GaugeVec
-	load           *prometheus.GaugeVec
-	accessesTotal  *prometheus.Desc
-	kBytesTotal    *prometheus.Desc
-	durationTotal  *prometheus.Desc
-	cpuTotal       *prometheus.GaugeVec
-	cpuload        prometheus.Gauge
-	uptime         *prometheus.Desc
-	workers        *prometheus.GaugeVec
-	processes      *prometheus.GaugeVec
-	connections    *prometheus.GaugeVec
-	scoreboard     *prometheus.GaugeVec
+	up                    *prometheus.Desc
+	scrapeFailures        prometheus.Counter
+	apacheVersion         *prometheus.Desc
+	apacheInfo            *prometheus.GaugeVec
+	generation            *prometheus.GaugeVec
+	load                  *prometheus.GaugeVec
+	accessesTotal         *prometheus.Desc
+	kBytesTotal           *prometheus.Desc
+	durationTotal         *prometheus.Desc
+	cpuTotal              *prometheus.GaugeVec
+	cpuload               prometheus.Gauge
+	uptime                *prometheus.Desc
+	workers               *prometheus.GaugeVec
+	processes             *prometheus.GaugeVec
+	connections           *prometheus.GaugeVec
+	scoreboard            *prometheus.GaugeVec
+	proxyBalancerStatus   *prometheus.GaugeVec
+	proxyBalancerElected  *prometheus.Desc
+	proxyBalancerBusy     *prometheus.GaugeVec
+	proxyBalancerReqSize  *prometheus.Desc
+	proxyBalancerRespSize *prometheus.Desc
 }
 
 func NewExporter(uri string) *Exporter {
@@ -155,6 +160,35 @@ func NewExporter(uri string) *Exporter {
 		},
 			[]string{"state"},
 		),
+		proxyBalancerStatus: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "proxy_balancer_status",
+			Help:      "Apache Proxy Balancer Statuses",
+		},
+			[]string{"balancer", "worker", "status"},
+		),
+		proxyBalancerElected: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "proxy_balancer_accesses_total"),
+			"Apache Proxy Balancer Request Count",
+			[]string{"balancer", "worker"}, nil,
+		),
+		proxyBalancerBusy: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "proxy_balancer_busy",
+			Help:      "Apache Proxy Balancer Active Requests",
+		},
+			[]string{"balancer", "worker"},
+		),
+		proxyBalancerReqSize: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "proxy_balancer_request_kbytes_total"),
+			"Apache Proxy Balancer Request Count",
+			[]string{"balancer", "worker"}, nil,
+		),
+		proxyBalancerRespSize: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "proxy_balancer_response_kbytes_total"),
+			"Apache Proxy Balancer Request Count",
+			[]string{"balancer", "worker"}, nil,
+		),
 		client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure},
@@ -180,6 +214,11 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.processes.Describe(ch)
 	e.connections.Describe(ch)
 	e.scoreboard.Describe(ch)
+	e.proxyBalancerStatus.Describe(ch)
+	ch <- e.proxyBalancerElected
+	e.proxyBalancerBusy.Describe(ch)
+	ch <- e.proxyBalancerReqSize
+	ch <- e.proxyBalancerRespSize
 }
 
 // Split colon separated string into two fields
@@ -258,6 +297,8 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	//connectionInfo := false
 	version := "UNKNOWN"
 	mpm := "UNKNOWN"
+	balancerName := "UNKNOWN"
+	workerName := "UNKNOWN"
 
 	for _, l := range lines {
 		key, v := splitkv(l)
@@ -443,6 +484,46 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		case key == "Scoreboard":
 			e.updateScoreboard(v)
 			e.scoreboard.Collect(ch)
+		//ProxyBalancer[0]Name: balancer://sid2021
+		//ProxyBalancer[0]Worker[0]Name: https://z-app-01:9143
+		//ProxyBalancer[0]Worker[0]Status: Init Ok
+		//ProxyBalancer[0]Worker[0]Elected: 5808
+		//...
+		case strings.HasPrefix(key, "ProxyBalancer["):
+			switch {
+			case strings.HasSuffix(key, "]Name"):
+				if strings.Contains(key, "]Worker[") {
+					workerName = v
+				} else {
+					balancerName = v
+				}
+			case strings.HasSuffix(key, "]Status"):
+				e.proxyBalancerStatus.WithLabelValues(balancerName, workerName, v).Set(1)
+			case strings.HasSuffix(key, "]Elected"):
+				val, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				ch <- prometheus.MustNewConstMetric(e.proxyBalancerElected, prometheus.CounterValue, val, balancerName, workerName)
+			case strings.HasSuffix(key, "]Busy"):
+				val, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				e.proxyBalancerBusy.WithLabelValues(balancerName, workerName).Set(val)
+			case strings.HasSuffix(key, "]Sent"):
+				val, err := strconv.ParseFloat(strings.TrimRight(v, "kK"), 64)
+				if err != nil {
+					return err
+				}
+				ch <- prometheus.MustNewConstMetric(e.proxyBalancerReqSize, prometheus.CounterValue, val, balancerName, workerName)
+			case strings.HasSuffix(key, "]Rcvd"):
+				val, err := strconv.ParseFloat(strings.TrimRight(v, "kK"), 64)
+				if err != nil {
+					return err
+				}
+				ch <- prometheus.MustNewConstMetric(e.proxyBalancerRespSize, prometheus.CounterValue, val, balancerName, workerName)
+			}
 		}
 	}
 
@@ -458,6 +539,9 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	if connectionInfo {
 		e.connections.Collect(ch)
 	}
+
+	e.proxyBalancerStatus.Collect(ch)
+	e.proxyBalancerBusy.Collect(ch)
 
 	return nil
 }
