@@ -40,16 +40,15 @@ type Exporter struct {
 
 	up             *prometheus.Desc
 	scrapeFailures prometheus.Counter
+	apacheVersion  *prometheus.Desc
 	accessesTotal  *prometheus.Desc
 	kBytesTotal    *prometheus.Desc
 	durationTotal  *prometheus.Desc
 	cpuload        prometheus.Gauge
 	uptime         *prometheus.Desc
 	workers        *prometheus.GaugeVec
-	scoreboard     *prometheus.GaugeVec
 	connections    *prometheus.GaugeVec
-
-	apacheVersion *prometheus.Desc
+	scoreboard     *prometheus.GaugeVec
 }
 
 func NewExporter(uri string) *Exporter {
@@ -65,6 +64,11 @@ func NewExporter(uri string) *Exporter {
 			Name:      "exporter_scrape_failures_total",
 			Help:      "Number of errors while scraping apache.",
 		}),
+		apacheVersion: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "version"),
+			"Apache server version",
+			[]string{"version"},
+			nil),
 		accessesTotal: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "accesses_total"),
 			"Current total apache accesses (*)",
@@ -97,13 +101,6 @@ func NewExporter(uri string) *Exporter {
 		},
 			[]string{"state"},
 		),
-		scoreboard: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "scoreboard",
-			Help:      "Apache scoreboard statuses",
-		},
-			[]string{"state"},
-		),
 		connections: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "connections",
@@ -111,11 +108,13 @@ func NewExporter(uri string) *Exporter {
 		},
 			[]string{"state"},
 		),
-		apacheVersion: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "version"),
-			"Apache server version",
-			[]string{"version"},
-			nil),
+		scoreboard: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "scoreboard",
+			Help:      "Apache scoreboard statuses",
+		},
+			[]string{"state"},
+		),
 		client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecure},
@@ -126,16 +125,16 @@ func NewExporter(uri string) *Exporter {
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.up
+	e.scrapeFailures.Describe(ch)
+	ch <- e.apacheVersion
 	ch <- e.accessesTotal
 	ch <- e.kBytesTotal
-	ch <- e.uptime
 	ch <- e.durationTotal
-	ch <- e.apacheVersion
 	e.cpuload.Describe(ch)
-	e.scrapeFailures.Describe(ch)
+	ch <- e.uptime
 	e.workers.Describe(ch)
-	e.scoreboard.Describe(ch)
 	e.connections.Describe(ch)
+	e.scoreboard.Describe(ch)
 }
 
 // Split colon separated string into two fields
@@ -220,13 +219,6 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		}
 
 		switch {
-		case key == "Total Accesses":
-			val, err := strconv.ParseFloat(v, 64)
-			if err != nil {
-				return err
-			}
-
-			ch <- prometheus.MustNewConstMetric(e.accessesTotal, prometheus.CounterValue, val)
 		case key == "ServerVersion":
 			var minVersion string
 
@@ -240,6 +232,13 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			ch <- prometheus.MustNewConstMetric(e.apacheVersion, prometheus.CounterValue, val, v)
+		case key == "Total Accesses":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			ch <- prometheus.MustNewConstMetric(e.accessesTotal, prometheus.CounterValue, val)
 		case key == "Total kBytes":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -282,9 +281,6 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.workers.WithLabelValues("idle").Set(val)
-		case key == "Scoreboard":
-			e.updateScoreboard(v)
-			e.scoreboard.Collect(ch)
 		case key == "ConnsTotal":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -315,6 +311,9 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 			e.connections.WithLabelValues("closing").Set(val)
 			connectionInfo = true
+		case key == "Scoreboard":
+			e.updateScoreboard(v)
+			e.scoreboard.Collect(ch)
 		}
 
 	}
