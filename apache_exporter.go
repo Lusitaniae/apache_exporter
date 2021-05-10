@@ -41,12 +41,17 @@ type Exporter struct {
 	up             *prometheus.Desc
 	scrapeFailures prometheus.Counter
 	apacheVersion  *prometheus.Desc
+	apacheInfo     *prometheus.GaugeVec
+	generation     *prometheus.GaugeVec
+	load           *prometheus.GaugeVec
 	accessesTotal  *prometheus.Desc
 	kBytesTotal    *prometheus.Desc
 	durationTotal  *prometheus.Desc
+	cpuTotal       *prometheus.GaugeVec
 	cpuload        prometheus.Gauge
 	uptime         *prometheus.Desc
 	workers        *prometheus.GaugeVec
+	processes      *prometheus.GaugeVec
 	connections    *prometheus.GaugeVec
 	scoreboard     *prometheus.GaugeVec
 }
@@ -67,8 +72,29 @@ func NewExporter(uri string) *Exporter {
 		apacheVersion: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "version"),
 			"Apache server version",
-			[]string{"version"},
+			nil,
 			nil),
+		apacheInfo: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "info",
+			Help:      "Apache version information",
+		},
+			[]string{"version", "mpm"},
+		),
+		generation: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "generation",
+			Help:      "Apache restart generation",
+		},
+			[]string{"type"},
+		),
+		load: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "load",
+			Help:      "Apache server load",
+		},
+			[]string{"interval"},
+		),
 		accessesTotal: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "accesses_total"),
 			"Current total apache accesses (*)",
@@ -84,6 +110,13 @@ func NewExporter(uri string) *Exporter {
 			"Total duration of all registered requests in ms",
 			nil,
 			nil),
+		cpuTotal: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "cpu_time",
+			Help:      "Apache CPU time",
+		},
+			[]string{"type"},
+		),
 		cpuload: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "cpuload",
@@ -98,6 +131,13 @@ func NewExporter(uri string) *Exporter {
 			Namespace: namespace,
 			Name:      "workers",
 			Help:      "Apache worker statuses",
+		},
+			[]string{"state"},
+		),
+		processes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "processes",
+			Help:      "Apache process count",
 		},
 			[]string{"state"},
 		),
@@ -127,12 +167,17 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.up
 	e.scrapeFailures.Describe(ch)
 	ch <- e.apacheVersion
+	e.apacheInfo.Describe(ch)
+	e.generation.Describe(ch)
+	e.load.Describe(ch)
 	ch <- e.accessesTotal
 	ch <- e.kBytesTotal
 	ch <- e.durationTotal
+	e.cpuTotal.Describe(ch)
 	e.cpuload.Describe(ch)
 	ch <- e.uptime
 	e.workers.Describe(ch)
+	e.processes.Describe(ch)
 	e.connections.Describe(ch)
 	e.scoreboard.Describe(ch)
 }
@@ -211,6 +256,8 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 	connectionInfo := false
 	//connectionInfo := false
+	version := "UNKNOWN"
+	mpm := "UNKNOWN"
 
 	for _, l := range lines {
 		key, v := splitkv(l)
@@ -220,18 +267,58 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 
 		switch {
 		case key == "ServerVersion":
-			var minVersion string
+			var tmpstr string
+			var vparts []string
 
-			minVersion = strings.Split(v, "/")[1]
-			minVersion = strings.Split(minVersion, " ")[0]
-			minVersion = strings.Join(strings.Split(minVersion, ".")[0:2], ".")
+			version = v
+			tmpstr = strings.Split(v, "/")[1]
+			tmpstr = strings.Split(tmpstr, " ")[0]
+			vparts = strings.Split(tmpstr, ".")
+			tmpstr = vparts[0] + "." + fmt.Sprintf("%02s", vparts[1]) + fmt.Sprintf("%03s", vparts[2])
 
-			val, err := strconv.ParseFloat(minVersion, 64)
+			val, err := strconv.ParseFloat(tmpstr, 64)
 			if err != nil {
 				return err
 			}
 
-			ch <- prometheus.MustNewConstMetric(e.apacheVersion, prometheus.CounterValue, val, v)
+			ch <- prometheus.MustNewConstMetric(e.apacheVersion, prometheus.GaugeValue, val)
+		case key == "ServerMPM":
+			mpm = v
+		case key == "ParentServerConfigGeneration":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.generation.WithLabelValues("config").Set(val)
+		case key == "ParentServerMPMGeneration":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.generation.WithLabelValues("mpm").Set(val)
+		case key == "Load1":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.load.WithLabelValues("1min").Set(val)
+		case key == "Load5":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.load.WithLabelValues("5min").Set(val)
+		case key == "Load15":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.load.WithLabelValues("15min").Set(val)
 		case key == "Total Accesses":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -253,6 +340,34 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			ch <- prometheus.MustNewConstMetric(e.durationTotal, prometheus.CounterValue, val)
+		case key == "CPUUser":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.cpuTotal.WithLabelValues("active_user").Set(val)
+		case key == "CPUChildrenUser":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.cpuTotal.WithLabelValues("children_user").Set(val)
+		case key == "CPUSystem":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.cpuTotal.WithLabelValues("active_system").Set(val)
+		case key == "CPUChildrenSystem":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.cpuTotal.WithLabelValues("children_system").Set(val)
 		case key == "CPULoad":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -281,6 +396,20 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			}
 
 			e.workers.WithLabelValues("idle").Set(val)
+		case key == "Processes":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.processes.WithLabelValues("all").Set(val)
+		case key == "Stopping":
+			val, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return err
+			}
+
+			e.processes.WithLabelValues("stopping").Set(val)
 		case key == "ConnsTotal":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -315,11 +444,17 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			e.updateScoreboard(v)
 			e.scoreboard.Collect(ch)
 		}
-
 	}
 
+	e.apacheInfo.WithLabelValues(version, mpm).Set(1)
+
+	e.apacheInfo.Collect(ch)
+	e.generation.Collect(ch)
+	e.load.Collect(ch)
+	e.cpuTotal.Collect(ch)
 	e.cpuload.Collect(ch)
 	e.workers.Collect(ch)
+	e.processes.Collect(ch)
 	if connectionInfo {
 		e.connections.Collect(ch)
 	}

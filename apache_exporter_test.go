@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	apache24Status = `localhost
+	apache24EventStatus = `localhost
 ServerVersion: Apache/2.4.23 (Unix)
 ServerMPM: event
 Server Built: Jul 29 2016 04:26:14
@@ -34,13 +34,69 @@ Uptime: 445
 ReqPerSec: .294382
 BytesPerSec: 317.555
 BytesPerReq: 1078.72
+DurationPerReq: 98.7022
 BusyWorkers: 1
 IdleWorkers: 74
+Processes: 5
+Stopping: 0
 ConnsTotal: 0
 ConnsAsyncWriting: 0
 ConnsAsyncKeepAlive: 0
 ConnsAsyncClosing: 0
 Scoreboard: _W___
+`
+
+	apache24EventTLSStatus = `localhost
+ServerVersion: Apache/2.4.23 (Unix)
+ServerMPM: event
+Server Built: Jul 29 2016 04:26:14
+CurrentTime: Friday, 29-Jul-2016 14:06:15 UTC
+RestartTime: Friday, 29-Jul-2016 13:58:49 UTC
+ParentServerConfigGeneration: 1
+ParentServerMPMGeneration: 0
+ServerUptimeSeconds: 445
+ServerUptime: 7 minutes 25 seconds
+Load1: 0.02
+Load5: 0.02
+Load15: 0.00
+Total Accesses: 131
+Total kBytes: 138
+Total Duration: 12930
+CPUUser: .25
+CPUSystem: .15
+CPUChildrenUser: 0
+CPUChildrenSystem: 0
+CPULoad: .0898876
+Uptime: 445
+ReqPerSec: .294382
+BytesPerSec: 317.555
+BytesPerReq: 1078.72
+DurationPerReq: 98.7022
+BusyWorkers: 1
+IdleWorkers: 74
+Processes: 5
+Stopping: 0
+ConnsTotal: 0
+ConnsAsyncWriting: 0
+ConnsAsyncKeepAlive: 0
+ConnsAsyncClosing: 0
+Scoreboard: _W___
+TLSSessionCacheStatus
+CacheType: SHMCB
+CacheSharedMemory: 512000
+CacheCurrentEntries: 0
+CacheSubcaches: 32
+CacheIndexesPerSubcaches: 88
+CacheIndexUsage: 0%
+CacheUsage: 0%
+CacheStoreCount: 0
+CacheReplaceCount: 0
+CacheExpireCount: 0
+CacheDiscardCount: 0
+CacheRetrieveHitCount: 0
+CacheRetrieveMissCount: 1
+CacheRemoveHitCount: 0
+CacheRemoveMissCount: 0
 `
 
 	apache24WorkerStatus = `localhost
@@ -68,25 +124,41 @@ Uptime: 85
 ReqPerSec: .117647
 BytesPerSec: 457.788
 BytesPerReq: 3891.2
+DurationPerReq: 1293.00
 BusyWorkers: 2
 IdleWorkers: 48
 Scoreboard: _____R_______________________K____________________....................................................................................................
-TLSSessionCacheStatus
-CacheType: SHMCB
-CacheSharedMemory: 512000
-CacheCurrentEntries: 0
-CacheSubcaches: 32
-CacheIndexesPerSubcaches: 88
-CacheIndexUsage: 0%
-CacheUsage: 0%
-CacheStoreCount: 0
-CacheReplaceCount: 0
-CacheExpireCount: 0
-CacheDiscardCount: 0
-CacheRetrieveHitCount: 0
-CacheRetrieveMissCount: 1
-CacheRemoveHitCount: 0
-CacheRemoveMissCount: 0
+`
+
+	apache24PreforkStatus = `localhost
+ServerVersion: Apache/2.4.23 (Unix) OpenSSL/1.0.2h
+ServerMPM: prefork
+Server Built: Aug 31 2016 10:54:08
+CurrentTime: Thursday, 08-Sep-2016 15:09:32 CEST
+RestartTime: Thursday, 08-Sep-2016 15:08:07 CEST
+ParentServerConfigGeneration: 1
+ParentServerMPMGeneration: 0
+ServerUptimeSeconds: 85
+ServerUptime: 1 minute 25 seconds
+Load1: 0.00
+Load5: 0.01
+Load15: 0.05
+Total Accesses: 10
+Total kBytes: 38
+Total Duration: 12930
+CPUUser: .05
+CPUSystem: 0
+CPUChildrenUser: 0
+CPUChildrenSystem: 0
+CPULoad: .0588235
+Uptime: 85
+ReqPerSec: .117647
+BytesPerSec: 457.788
+BytesPerReq: 3891.2
+DurationPerReq: 1293.00
+BusyWorkers: 2
+IdleWorkers: 48
+Scoreboard: _____R_______________________K____________________....................................................................................................
 `
 
 	apache22Status = `Total Accesses: 302311
@@ -101,9 +173,11 @@ IdleWorkers: 8
 Scoreboard: _W_______K......................................................................................................................................................................................................................................................
 `
 
-	metricCountApache22       = 18
-	metricCountApache24       = 24
-	metricCountApache24Worker = 20
+	metricCountApache22         = 19
+	metricCountApache24Event    = 36
+	metricCountApache24EventTLS = 36
+	metricCountApache24Worker   = 30
+	metricCountApache24Prefork  = 30
 )
 
 func checkApacheStatus(t *testing.T, status string, metricCount int) {
@@ -139,10 +213,18 @@ func TestApache22Status(t *testing.T) {
 	checkApacheStatus(t, apache22Status, metricCountApache22)
 }
 
-func TestApache24Status(t *testing.T) {
-	checkApacheStatus(t, apache24Status, metricCountApache24)
+func TestApache24EventStatus(t *testing.T) {
+	checkApacheStatus(t, apache24EventStatus, metricCountApache24Event)
+}
+
+func TestApache24EventTLSStatus(t *testing.T) {
+	checkApacheStatus(t, apache24EventTLSStatus, metricCountApache24EventTLS)
 }
 
 func TestApache24WorkerStatus(t *testing.T) {
 	checkApacheStatus(t, apache24WorkerStatus, metricCountApache24Worker)
+}
+
+func TestApache24PreforkStatus(t *testing.T) {
+	checkApacheStatus(t, apache24PreforkStatus, metricCountApache24Prefork)
 }
