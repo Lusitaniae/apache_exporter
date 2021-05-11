@@ -18,7 +18,7 @@ Help on flags:
                           Address on which to expose metrics.
       --telemetry.endpoint="/metrics"
                           Path under which to expose metrics.
-      --scrape_uri="http://localhost/server-status/?auto"
+      --scrape_uri="http://localhost/server-status?auto"
                           URI to apache stub status page.
       --host_override=""  Override for HTTP Host header; empty string for no override.
       --insecure          Ignore server certificate if using https.
@@ -69,7 +69,7 @@ docker build -t apache_exporter .
 
 ```
 docker run -d -p 9117:9117 apache_exporter \
-  --scrape_uri="https://your.server.com/server-status/?auto"
+  --scrape_uri="https://your.server.com/server-status?auto"
 ```
 
 ## Collectors
