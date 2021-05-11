@@ -249,11 +249,11 @@ Scoreboard: _W_______K..........................................................
 `
 
 	metricCountApache22           = 19
-	metricCountApache24Event      = 36
-	metricCountApache24EventTLS   = 36
-	metricCountApache24EventProxy = 66
-	metricCountApache24Worker     = 30
-	metricCountApache24Prefork    = 30
+	metricCountApache24Event      = 34
+	metricCountApache24EventTLS   = 34
+	metricCountApache24EventProxy = 64
+	metricCountApache24Worker     = 28
+	metricCountApache24Prefork    = 28
 )
 
 func checkApacheStatus(t *testing.T, status string, metricCount int) {

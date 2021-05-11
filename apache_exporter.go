@@ -47,7 +47,7 @@ type Exporter struct {
 	accessesTotal         *prometheus.Desc
 	kBytesTotal           *prometheus.Desc
 	durationTotal         *prometheus.Desc
-	cpuTotal              *prometheus.GaugeVec
+	cpuTotal              *prometheus.Desc
 	cpuload               prometheus.Gauge
 	uptime                *prometheus.Desc
 	workers               *prometheus.GaugeVec
@@ -115,12 +115,10 @@ func NewExporter(uri string) *Exporter {
 			"Total duration of all registered requests in ms",
 			nil,
 			nil),
-		cpuTotal: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "cpu_time",
-			Help:      "Apache CPU time",
-		},
-			[]string{"type"},
+		cpuTotal: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "cpu_time_ms_total"),
+			"Apache CPU time",
+			[]string{"type"}, nil,
 		),
 		cpuload: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -207,7 +205,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.accessesTotal
 	ch <- e.kBytesTotal
 	ch <- e.durationTotal
-	e.cpuTotal.Describe(ch)
+	ch <- e.cpuTotal
 	e.cpuload.Describe(ch)
 	ch <- e.uptime
 	e.workers.Describe(ch)
@@ -299,6 +297,9 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	mpm := "UNKNOWN"
 	balancerName := "UNKNOWN"
 	workerName := "UNKNOWN"
+	cpuUser := 0.0
+	cpuSystem := 0.0
+	cpuFound := false
 
 	for _, l := range lines {
 		key, v := splitkv(l)
@@ -387,28 +388,32 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 				return err
 			}
 
-			e.cpuTotal.WithLabelValues("active_user").Set(val)
+			cpuUser += val
+			cpuFound = true
 		case key == "CPUChildrenUser":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 
-			e.cpuTotal.WithLabelValues("children_user").Set(val)
+			cpuUser += val
+			cpuFound = true
 		case key == "CPUSystem":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 
-			e.cpuTotal.WithLabelValues("active_system").Set(val)
+			cpuSystem += val
+			cpuFound = true
 		case key == "CPUChildrenSystem":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
 
-			e.cpuTotal.WithLabelValues("children_system").Set(val)
+			cpuSystem += val
+			cpuFound = true
 		case key == "CPULoad":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
@@ -527,12 +532,16 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		}
 	}
 
+	if cpuFound {
+		ch <- prometheus.MustNewConstMetric(e.cpuTotal, prometheus.CounterValue, 1000*cpuUser, "user")
+		ch <- prometheus.MustNewConstMetric(e.cpuTotal, prometheus.CounterValue, 1000*cpuSystem, "system")
+	}
+
 	e.apacheInfo.WithLabelValues(version, mpm).Set(1)
 
 	e.apacheInfo.Collect(ch)
 	e.generation.Collect(ch)
 	e.load.Collect(ch)
-	e.cpuTotal.Collect(ch)
 	e.cpuload.Collect(ch)
 	e.workers.Collect(ch)
 	e.processes.Collect(ch)
