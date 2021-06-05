@@ -18,7 +18,7 @@ Help on flags:
                           Address on which to expose metrics.
       --telemetry.endpoint="/metrics"
                           Path under which to expose metrics.
-      --scrape_uri="http://localhost/server-status/?auto"
+      --scrape_uri="http://localhost/server-status?auto"
                           URI to apache stub status page.
       --host_override=""  Override for HTTP Host header; empty string for no override.
       --insecure          Ignore server certificate if using https.
@@ -69,7 +69,7 @@ docker build -t apache_exporter .
 
 ```
 docker run -d -p 9117:9117 apache_exporter \
-  --scrape_uri="https://your.server.com/server-status/?auto"
+  --scrape_uri="https://your.server.com/server-status?auto"
 ```
 
 ## Collectors
@@ -93,8 +93,8 @@ Apache metrics:
 # TYPE apache_workers gauge
 # HELP apache_version Apache server version
 # TYPE apache_version gauge
-# HELP apache_duration_total Total duration of all registered requests
-# TYPE apache_duration_total gauge
+# HELP apache_duration_ms_total Total duration of all registered requests
+# TYPE apache_duration_ms_total gauge
 ```
 
 Metrics marked '(*)' are only available if ExtendedStatus is On in apache webserver configuration. In version 2.3.6, loading mod_status will toggle ExtendedStatus On by default.

@@ -1,3 +1,6 @@
+go:
+    version: 1.13
+    cgo: false
 repository:
     path: github.com/Lusitaniae/apache_exporter
 build:

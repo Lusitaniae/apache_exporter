@@ -76,8 +76,8 @@ func NewExporter(uri string) *Exporter {
 			nil,
 			nil),
 		durationTotal: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "duration_total"),
-			"Total duration of all registered requests",
+			prometheus.BuildFQName(namespace, "", "duration_ms_total"),
+			"Total duration of all registered requests in ms",
 			nil,
 			nil),
 		cpuload: prometheus.NewGauge(prometheus.GaugeOpts{
