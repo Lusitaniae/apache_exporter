@@ -28,6 +28,8 @@ workflows:
               only: /.*/
       - prometheus/publish_master:
           context: org-context
+          docker_hub_organization: lusotycoon
+          quay_io_organization: lusitaniae
           requires:
             - test
             - build
@@ -36,6 +38,8 @@ workflows:
               only: master
       - prometheus/publish_release:
           context: org-context
+          docker_hub_organization: lusotycoon
+          quay_io_organization: lusitaniae
           requires:
             - test
             - build
