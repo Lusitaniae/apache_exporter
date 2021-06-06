@@ -27,7 +27,7 @@ workflows:
             tags:
               only: /.*/
       - prometheus/publish_master:
-          context: org-context
+          context: org-global
           docker_hub_organization: lusotycoon
           quay_io_organization: lusitaniae
           requires:
@@ -37,7 +37,7 @@ workflows:
             branches:
               only: master
       - prometheus/publish_release:
-          context: org-context
+          context: org-global
           docker_hub_organization: lusotycoon
           quay_io_organization: lusitaniae
           requires:
