@@ -1,2 +1,5 @@
 .idea/*
 bin/*
+vendor/
+apache_exporter
+
