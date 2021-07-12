@@ -101,6 +101,16 @@ Metrics marked '(*)' are only available if ExtendedStatus is On in apache webser
 
 ## FAQ
 
+Q. Can I change the Dockerfile?
+
+A. In short no, it's not meant for end users. It's part of the CI/CD pipeline in which promu is cross building the exporter for all architectures and packaging them into a Docker image. 
+
+Q. Can I run this exporter on different architectures (ARM)?
+
+A. This exporter is cross compiled to all architectures using [promu](https://github.com/prometheus/promu) by running `promu crossbuild`. You can find the resulting artifacts in the release page (Github) or docker images in [Quay](https://quay.io/repository/Lusitaniae/apache-exporter) or [Docker](https://hub.docker.com/r/lusotycoon/apache-exporter/). 
+
+A. There's a 3rd party dashboard [here](https://grafana.com/dashboards/3894) which seems to work. 
+
 Q. Is there a Grafana dashboard for this exporter?
 
 A. There's a 3rd party dashboard [here](https://grafana.com/dashboards/3894) which seems to work. 
