@@ -307,6 +307,8 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	cpuUser := 0.0
 	cpuSystem := 0.0
 	cpuFound := false
+	e.proxyBalancerStatus.Reset()
+	e.proxyBalancerBusy.Reset()
 
 	for _, l := range lines {
 		key, v := splitkv(l)
