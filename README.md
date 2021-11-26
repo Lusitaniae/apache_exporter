@@ -156,6 +156,21 @@ Q. There seem to be missing metrics! I can only see apache_up and apache_cpuload
 
 A. Make sure that you add `?auto` at the end of the scrape_uri.
 
+
+
+## TLS and basic authentication
+
+Graphite Exporter supports TLS and basic authentication. This enables better
+control of the various HTTP endpoints.
+
+To use TLS and/or basic authentication, you need to pass a configuration file
+using the `--web.config.file` parameter. The format of the file is described
+[in the exporter-toolkit repository](https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md).
+
+Note that the TLS and basic authentication settings affect all HTTP endpoints:
+/metrics for scraping, /probe for probing, and the web UI.
+
+
 ## Author
 
 The exporter was originally created by [neezgee](https://github.com/neezgee).
