@@ -160,7 +160,7 @@ A. Make sure that you add `?auto` at the end of the scrape_uri.
 
 ## TLS and basic authentication
 
-Graphite Exporter supports TLS and basic authentication. This enables better
+Apache Exporter supports TLS and basic authentication. This enables better
 control of the various HTTP endpoints.
 
 To use TLS and/or basic authentication, you need to pass a configuration file
