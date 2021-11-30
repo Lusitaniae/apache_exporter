@@ -33,8 +33,7 @@ import (
 )
 
 const (
-	namespace       = "apache" // For Prometheus metrics.
-	defaultLogLevel = "info"
+	namespace = "apache" // For Prometheus metrics.
 )
 
 var (
@@ -44,7 +43,6 @@ var (
 	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
 	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
 	configFile       = kingpin.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
-	logLevel         = kingpin.Flag("log.level", "Only log messages with the given severity or above. Valid levels: [debug, info, warn, error].").Default(defaultLogLevel).String()
 	gracefulStop     = make(chan os.Signal)
 )
 
@@ -587,23 +585,13 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func main() {
 
 	promlogConfig := &promlog.Config{}
-	promlogConfig.Level = &promlog.AllowedLevel{}
-	promlogConfig.Format = &promlog.AllowedFormat{}
-
-	if err := promlogConfig.Level.Set(*logLevel); err != nil {
-		fmt.Fprintf(os.Stderr, "Wrong loglevel parameter - %s\n", err)
-		os.Exit(1)
-	}
-	promlogConfig.Format.Set("logfmt")
-
-	logger := promlog.New(promlogConfig)
 
 	// Parse flags
 	flag.AddFlags(kingpin.CommandLine, promlogConfig)
-	kingpin.Version(version.Print("apache_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-
+	logger := promlog.New(promlogConfig)
+	kingpin.Version(version.Print("apache_exporter"))
 	// listen to termination signals from the OS
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
