@@ -75,9 +75,10 @@ type Exporter struct {
 	logger                log.Logger
 }
 
-func NewExporter(uri string) *Exporter {
+func NewExporter(logger log.Logger, uri string) *Exporter {
 	return &Exporter{
-		URI: uri,
+		URI:    uri,
+		logger: logger,
 		up: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "up"),
 			"Could the apache server be reached",
@@ -598,7 +599,7 @@ func main() {
 	signal.Notify(gracefulStop, syscall.SIGHUP)
 	signal.Notify(gracefulStop, syscall.SIGQUIT)
 
-	exporter := NewExporter(*scrapeURI)
+	exporter := NewExporter(logger, *scrapeURI)
 	prometheus.MustRegister(exporter)
 	prometheus.MustRegister(version.NewCollector("apache_exporter"))
 
