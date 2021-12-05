@@ -17,14 +17,19 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
-	"github.com/prometheus/common/version"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log/level"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/common/version"
+	"github.com/prometheus/exporter-toolkit/web"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const (
@@ -37,6 +42,7 @@ var (
 	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
 	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
 	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
+	configFile       = kingpin.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
 	gracefulStop     = make(chan os.Signal)
 )
 
@@ -66,11 +72,13 @@ type Exporter struct {
 	proxyBalancerBusy     *prometheus.GaugeVec
 	proxyBalancerReqSize  *prometheus.Desc
 	proxyBalancerRespSize *prometheus.Desc
+	logger                log.Logger
 }
 
-func NewExporter(uri string) *Exporter {
+func NewExporter(logger log.Logger, uri string) *Exporter {
 	return &Exporter{
-		URI: uri,
+		URI:    uri,
+		logger: logger,
 		up: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "up"),
 			"Could the apache server be reached",
@@ -568,7 +576,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.mutex.Lock() // To protect metrics from concurrent collects.
 	defer e.mutex.Unlock()
 	if err := e.collect(ch); err != nil {
-		log.Errorf("Error scraping apache: %s", err)
+		level.Error(e.logger).Log("msg", "Error scraping apache:", "err", err)
 		e.scrapeFailures.Inc()
 		e.scrapeFailures.Collect(ch)
 	}
@@ -577,34 +585,36 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 func main() {
 
+	promlogConfig := &promlog.Config{}
+
 	// Parse flags
-	log.AddFlags(kingpin.CommandLine)
-	kingpin.Version(version.Print("apache_exporter"))
+	flag.AddFlags(kingpin.CommandLine, promlogConfig)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-
+	logger := promlog.New(promlogConfig)
+	kingpin.Version(version.Print("apache_exporter"))
 	// listen to termination signals from the OS
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 	signal.Notify(gracefulStop, syscall.SIGHUP)
 	signal.Notify(gracefulStop, syscall.SIGQUIT)
 
-	exporter := NewExporter(*scrapeURI)
+	exporter := NewExporter(logger, *scrapeURI)
 	prometheus.MustRegister(exporter)
 	prometheus.MustRegister(version.NewCollector("apache_exporter"))
 
-	log.Infoln("Starting apache_exporter", version.Info())
-	log.Infoln("Build context", version.BuildContext())
-	log.Infof("Starting Server: %s", *listeningAddress)
-	log.Infof("Collect from: %s", *scrapeURI)
+	level.Info(logger).Log("msg", "Starting apache_exporter", "version", version.Info())
+	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())
+	level.Info(logger).Log("msg", "Starting Server: ", "listen_address", *listeningAddress)
+	level.Info(logger).Log("msg", "Collect from: ", "scrape_uri", *scrapeURI)
 
 	// listener for the termination signals from the OS
 	go func() {
-		log.Infof("listening and wait for graceful stop")
+		level.Info(logger).Log("msg", "listening and wait for graceful stop")
 		sig := <-gracefulStop
-		log.Infof("caught sig: %+v. Wait 2 seconds...", sig)
+		level.Info(logger).Log("msg", "caught sig: %+v. Wait 2 seconds...", "sig", sig)
 		time.Sleep(2 * time.Second)
-		log.Infof("Terminate apache-exporter on port: %s", *listeningAddress)
+		level.Info(logger).Log("msg", "Terminate apache-exporter on port:", "listen_address", *listeningAddress)
 		os.Exit(0)
 	}()
 
@@ -618,5 +628,13 @@ func main() {
 			 </body>
 			 </html>`))
 	})
-	log.Fatal(http.ListenAndServe(*listeningAddress, nil))
+	//log.Fatal(http.ListenAndServe(*listeningAddress, nil))
+
+	server := &http.Server{Addr: *listeningAddress}
+
+	if err := web.ListenAndServe(server, *configFile, logger); err != nil {
+		level.Error(logger).Log("msg", "Listening error", "reason", err)
+		os.Exit(1)
+	}
+
 }

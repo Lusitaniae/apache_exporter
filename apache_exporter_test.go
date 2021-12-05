@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/promlog"
 )
 
 const (
@@ -268,8 +269,9 @@ func checkApacheStatus(t *testing.T, status string, metricCount int) {
 		w.Write([]byte(status))
 	})
 	server := httptest.NewServer(handler)
-
-	e := NewExporter(server.URL)
+	promlogConfig := &promlog.Config{}
+	logger := promlog.New(promlogConfig)
+	e := NewExporter(logger, server.URL)
 	ch := make(chan prometheus.Metric)
 
 	go func() {
