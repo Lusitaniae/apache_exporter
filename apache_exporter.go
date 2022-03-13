@@ -590,9 +590,9 @@ func main() {
 	// Parse flags
 	flag.AddFlags(kingpin.CommandLine, promlogConfig)
 	kingpin.HelpFlag.Short('h')
+	kingpin.Version(version.Print("apache_exporter"))
 	kingpin.Parse()
 	logger := promlog.New(promlogConfig)
-	kingpin.Version(version.Print("apache_exporter"))
 	// listen to termination signals from the OS
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
