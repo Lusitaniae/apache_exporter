@@ -1,28 +1,24 @@
-name: Build
-
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+name: Release
 on:
-  push:
-    branches: [ build ]
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  release:
+    types: [released]
 jobs:
-  # This workflow contains a single job called "build"
-  build:
+  buildDockerImage:
     strategy:
       matrix:
         docker: ['scratch','ubi']
-    # The type of runner that the job will run on
+    name: Build docker image ${{ matrix.docker }}
     runs-on: ubuntu-latest
-    name: ${{ matrix.docker }}
     steps:
+    - name: Release if tagged
+      if: "!startswith(github.ref, 'refs/tags/v')"
+      run: exit 78
     - name: build
       uses: sysdiglabs/exporter-builder@v0.4
       with:
         exporter: apache-exporter
         artifactory_token: ${{ secrets.ARTI_TOKEN }}
         artifactory_username: david.lorite@sysdig.com
-        tag_name: dev
+        tag_name: ${{ github.event.release.tag_name }}
         target: ${{ matrix.docker }}
         repository: artifactory.internal.sysdig.com
