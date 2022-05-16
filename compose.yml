@@ -1,0 +1,15 @@
+name: apache_exporter
+services:
+  apache_exporter:
+    image: lusotycoon/apache-exporter
+    container_name: apache_exporter
+    privileged: true
+    ports:
+    - mode: ingress
+      target: 9117
+      published: "9117"
+      protocol: tcp
+    restart: unless-stopped
+    extra_hosts:
+    - "localhost:127.17.0.1"
+    entrypoint: /bin/apache_exporter  --scrape_uri="http://172.17.0.1/server-status?auto"
