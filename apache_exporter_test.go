@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Lusitaniae/apache_exporter/collector"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/promlog"
 )
@@ -271,7 +272,12 @@ func checkApacheStatus(t *testing.T, status string, metricCount int) {
 	server := httptest.NewServer(handler)
 	promlogConfig := &promlog.Config{}
 	logger := promlog.New(promlogConfig)
-	e := NewExporter(logger, server.URL)
+	config := &collector.Config{
+		ScrapeURI:    server.URL,
+		HostOverride: "",
+		Insecure:     false,
+	}
+	e := collector.NewExporter(logger, config)
 	ch := make(chan prometheus.Metric)
 
 	go func() {
