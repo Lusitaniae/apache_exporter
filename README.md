@@ -44,6 +44,13 @@ Override host name by runnning
 
 # Using Docker
 
+## Use ```compose.yml```
+- Requires Docker CE
+- Does not build from source, but rather pulls from registry only
+1. Edit compose.yml if needed (Maybe to change server-status endpoint)
+2. ```docker compose up```
+
+### OR
 ## Build the compatible binary
 To make sure that exporter binary created by build job is suitable to run on busybox environment, generate the binary using Makefile definition. Inside project directory run:
 ```
