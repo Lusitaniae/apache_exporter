@@ -20,9 +20,9 @@ const (
 
 type Exporter struct {
 	URI          string
+	hostOverride string
 	mutex        sync.Mutex
 	client       *http.Client
-	hostOverride string
 
 	up                    *prometheus.Desc
 	scrapeFailures        prometheus.Counter
