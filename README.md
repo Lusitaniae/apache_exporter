@@ -120,6 +120,7 @@ A. This exporter is cross compiled to all architectures using [promu](https://gi
 Q. Is there a Grafana dashboard for this exporter?
 
 A. There's a 3rd party dashboard [here](https://grafana.com/dashboards/3894) which seems to work.
+Also [monitoring-mixin](https://monitoring.mixins.dev/) (dashboard+prometheus alerts) is available [here](https://github.com/grafana/jsonnet-libs/tree/master/apache-http-mixin).
 
 Q. Can you add additional metrics such as reqpersec, bytespersec and bytesperreq?
 
