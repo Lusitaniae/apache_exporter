@@ -13,20 +13,23 @@ With working golang environment it can be built with `go get`.  There is a [good
 Help on flags:
 
 <pre>
-  -h, --help
+  -h, --help               Show context-sensitive help (also try --help-long and
+                           --help-man).
       --telemetry.address=":9117"
-                          Address on which to expose metrics.
+                           Address on which to expose metrics.
       --telemetry.endpoint="/metrics"
-                          Path under which to expose metrics.
-      --scrape_uri="http://localhost/server-status?auto"
-                          URI to apache stub status page.
-      --host_override=""  Override for HTTP Host header; empty string for no override.
-      --insecure          Ignore server certificate if using https.
-      --web.config=""     Path to config yaml file that can enable TLS or authentication.
-      --log.level="info"  Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]
-      --log.format="logger:stderr"
-                          Set the log target and format. Example: "logger:syslog?appname=bob&local=7" or "logger:stdout?json=true"
-      --version           Show application version.
+                           Path under which to expose metrics.
+      --scrape_uri="http://localhost/server-status/?auto"
+                           URI to apache stub status page.
+      --host_override=""   Override for HTTP Host header; empty string for no
+                           override.
+      --insecure           Ignore server certificate if using https.
+      --web.config=""      Path to config yaml file that can enable TLS or
+                           authentication.
+      --log.level=info     Only log messages with the given severity or above.
+                           One of: [debug, info, warn, error]
+      --log.format=logfmt  Output format of log messages. One of: [logfmt, json]
+      --version            Show application version.
 </pre>
 
 Tested on Apache 2.2 and Apache 2.4.
