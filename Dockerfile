@@ -25,7 +25,7 @@ EXPOSE      9117
 USER        nobody
 ENTRYPOINT  [ "/bin/apache_exporter" ]
 
-FROM quay.io/sysdig/sysdig-mini-ubi:1.2.12 as ubi
+FROM quay.io/sysdig/sysdig-mini-ubi:1.3.1 as ubi
 COPY --from=builder /bin/apache_exporter /bin/apache_exporter
 COPY --from=builder /user/group /user/passwd /etc/
 
