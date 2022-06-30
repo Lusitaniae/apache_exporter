@@ -1,6 +1,6 @@
 
 # Apache Exporter for Prometheus [![Build Status][buildstatus]][circleci]
- 
+
 [![GitHub release](https://img.shields.io/github/release/Lusitaniae/apache_exporter.svg)][release]
 ![GitHub Downloads](https://img.shields.io/github/downloads/Lusitaniae/apache_exporter/total.svg)
 [![Docker Repository on Quay](https://quay.io/repository/Lusitaniae/apache-exporter/status)][quay]
@@ -13,25 +13,29 @@ With working golang environment it can be built with `go get`.  There is a [good
 Help on flags:
 
 <pre>
-  -h, --help
+  -h, --help               Show context-sensitive help (also try --help-long and
+                           --help-man).
       --telemetry.address=":9117"
-                          Address on which to expose metrics.
+                           Address on which to expose metrics.
       --telemetry.endpoint="/metrics"
-                          Path under which to expose metrics.
-      --scrape_uri="http://localhost/server-status?auto"
-                          URI to apache stub status page.
-      --host_override=""  Override for HTTP Host header; empty string for no override.
-      --insecure          Ignore server certificate if using https.
-      --log.level="info"  Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]
-      --log.format="logger:stderr"
-                          Set the log target and format. Example: "logger:syslog?appname=bob&local=7" or "logger:stdout?json=true"
-      --version           Show application version.
+                           Path under which to expose metrics.
+      --scrape_uri="http://localhost/server-status/?auto"
+                           URI to apache stub status page.
+      --host_override=""   Override for HTTP Host header; empty string for no
+                           override.
+      --insecure           Ignore server certificate if using https.
+      --web.config=""      Path to config yaml file that can enable TLS or
+                           authentication.
+      --log.level=info     Only log messages with the given severity or above.
+                           One of: [debug, info, warn, error]
+      --log.format=logfmt  Output format of log messages. One of: [logfmt, json]
+      --version            Show application version.
 </pre>
 
 Tested on Apache 2.2 and Apache 2.4.
 
  If your server-status page is secured by http auth, add the credentials to the scrape URL following this example:
- 
+
 ```
 http://user:password@localhost/server-status?auto
 ```
@@ -43,6 +47,13 @@ Override host name by runnning
 
 # Using Docker
 
+## Use ```compose.yml```
+- Requires Docker CE
+- Does not build from source, but rather pulls from registry only
+1. Edit compose.yml if needed (Maybe to change server-status endpoint)
+2. ```docker compose up```
+
+### OR
 ## Build the compatible binary
 To make sure that exporter binary created by build job is suitable to run on busybox environment, generate the binary using Makefile definition. Inside project directory run:
 ```
@@ -103,15 +114,16 @@ Metrics marked '(*)' are only available if ExtendedStatus is On in apache webser
 
 Q. Can I change the Dockerfile?
 
-A. In short no, it's not meant for end users. It's part of the CI/CD pipeline in which promu is cross building the exporter for all architectures and packaging them into a Docker image. 
+A. In short no, it's not meant for end users. It's part of the CI/CD pipeline in which promu is cross building the exporter for all architectures and packaging them into a Docker image.
 
 Q. Can I run this exporter on different architectures (ARM)?
 
-A. This exporter is cross compiled to all architectures using [promu](https://github.com/prometheus/promu) by running `promu crossbuild`. You can find the resulting artifacts in the release page (Github) or docker images in [Quay](https://quay.io/repository/Lusitaniae/apache-exporter) or [Docker](https://hub.docker.com/r/lusotycoon/apache-exporter/). 
+A. This exporter is cross compiled to all architectures using [promu](https://github.com/prometheus/promu) by running `promu crossbuild`. You can find the resulting artifacts in the release page (Github) or docker images in [Quay](https://quay.io/repository/Lusitaniae/apache-exporter) or [Docker](https://hub.docker.com/r/lusotycoon/apache-exporter/).
 
 Q. Is there a Grafana dashboard for this exporter?
 
-A. There's a 3rd party dashboard [here](https://grafana.com/dashboards/3894) which seems to work. 
+A. There's a 3rd party dashboard [here](https://grafana.com/dashboards/3894) which seems to work.
+Also [monitoring-mixin](https://monitoring.mixins.dev/) (dashboard+prometheus alerts) is available [here](https://github.com/grafana/jsonnet-libs/tree/master/apache-http-mixin).
 
 Q. Can you add additional metrics such as reqpersec, bytespersec and bytesperreq?
 
@@ -122,15 +134,15 @@ A. In line with the [best practices](https://prometheus.io/docs/instrumenting/wr
 >   - `BytesPerSec`: `rate(apache_sent_kilobytes_total[5m])`
 >   - `BytesPerReq`: BytesPerSec / ReqPerSec
 
-Q. Can I monitor multiple Apache instances? 
+Q. Can I monitor multiple Apache instances?
 
-A. In line with the [best practices](https://prometheus.io/docs/instrumenting/writing_exporters/#deployment), the answer is no. *Each process being monitored should be accompanied by **one** exporter*. 
+A. In line with the [best practices](https://prometheus.io/docs/instrumenting/writing_exporters/#deployment), the answer is no. *Each process being monitored should be accompanied by **one** exporter*.
 
 We suggest automating configuration and deployment using your favorite tools, e.g. Ansible/Chef/Kubernetes.
 
 Q. Its not working! Apache_up shows as 0
 
-A. When apache_up reports 0 it means the exporter is running however it is not able to connect to Apache. 
+A. When apache_up reports 0 it means the exporter is running however it is not able to connect to Apache.
 
 Do you have this (or similar) configuration uncommented in your Apache instance?
 ```
@@ -155,6 +167,21 @@ Please include all this information if you still have issues when creating an is
 Q. There seem to be missing metrics! I can only see apache_up and apache_cpuload.
 
 A. Make sure that you add `?auto` at the end of the scrape_uri.
+
+
+
+## TLS and basic authentication
+
+Apache Exporter supports TLS and basic authentication. This enables better
+control of the various HTTP endpoints.
+
+To use TLS and/or basic authentication, you need to pass a configuration file
+using the `--web.config` parameter (see above at help on flags). The format of the file is described
+[in the exporter-toolkit repository](https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md).
+
+Note that the TLS and basic authentication settings affect all HTTP endpoints:
+/metrics for scraping, /probe for probing, and the web UI.
+
 
 ## Author
 
