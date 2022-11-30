@@ -10,7 +10,7 @@ package collector
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -283,7 +283,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	}
 	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 1)
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if resp.StatusCode != 200 {
 		if err != nil {
