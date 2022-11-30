@@ -33,7 +33,6 @@ var (
 	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
 	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
 	configFile       = kingpin.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
-	gracefulStop     = make(chan os.Signal)
 )
 
 func main() {
@@ -46,6 +45,10 @@ func main() {
 	kingpin.Version(version.Print("apache_exporter"))
 	kingpin.Parse()
 	logger := promlog.New(promlogConfig)
+	// Set up channel on which to send signal notifications.
+	// We must use a buffered channel or risk missing the signal
+	// if we're not ready to receive when the signal is sent.
+	gracefulStop := make(chan os.Signal, 2)
 	// listen to termination signals from the OS
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
