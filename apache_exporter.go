@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/Lusitaniae/apache_exporter/collector"
+	kingpin "github.com/alecthomas/kingpin/v2"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -23,7 +24,6 @@ import (
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
