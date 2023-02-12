@@ -33,7 +33,7 @@ var (
 	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
 	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
 	configFile       = kingpin.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
-	gracefulStop     = make(chan os.Signal)
+	gracefulStop     = make(chan os.Signal, 1)
 )
 
 func main() {
@@ -56,6 +56,10 @@ func main() {
 		ScrapeURI:    *scrapeURI,
 		HostOverride: *hostOverride,
 		Insecure:     *insecure,
+	}
+
+	flagConfig := &web.FlagConfig{
+		WebConfigFile: configFile,
 	}
 	exporter := collector.NewExporter(logger, config)
 	prometheus.MustRegister(exporter)
@@ -90,7 +94,7 @@ func main() {
 
 	server := &http.Server{Addr: *listeningAddress}
 
-	if err := web.ListenAndServe(server, *configFile, logger); err != nil {
+	if err := web.ListenAndServe(server, flagConfig, logger); err != nil {
 		level.Error(logger).Log("msg", "Listening error", "reason", err)
 		os.Exit(1)
 	}
