@@ -58,8 +58,12 @@ func main() {
 		Insecure:     *insecure,
 	}
 
+	webSystemdSocket := false
+	webListenAddresses := []string{*listeningAddress}
 	flagConfig := &web.FlagConfig{
-		WebConfigFile: configFile,
+		WebConfigFile:      configFile,
+		WebSystemdSocket:   &webSystemdSocket,
+		WebListenAddresses: &webListenAddresses,
 	}
 	exporter := collector.NewExporter(logger, config)
 	prometheus.MustRegister(exporter)
