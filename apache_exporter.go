@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	kingpin "github.com/alecthomas/kingpin/v2"
 	"github.com/Lusitaniae/apache_exporter/collector"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,7 +24,6 @@ import (
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
-	kingpin "github.com/alecthomas/kingpin/v2"
 )
 
 var (
