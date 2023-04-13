@@ -24,6 +24,7 @@ Help on flags:
       --host_override=""   Override for HTTP Host header; empty string for no
                            override.
       --insecure           Ignore server certificate if using https.
+      --custom_headers     Adds custom headers to the collector.
       --web.config=""      Path to config yaml file that can enable TLS or
                            authentication.
       --log.level=info     Only log messages with the given severity or above.
