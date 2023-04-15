@@ -10,7 +10,6 @@ package main
 import (
 	"net/http"
 	"os"
-
 	"os/signal"
 	"syscall"
 	"time"
@@ -24,20 +23,19 @@ import (
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
+	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 )
 
 var (
-	listeningAddress = kingpin.Flag("telemetry.address", "Address on which to expose metrics.").Default(":9117").String()
-	metricsEndpoint  = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
-	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
-	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
-	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
-	configFile       = kingpin.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
-	gracefulStop     = make(chan os.Signal, 1)
+	metricsEndpoint = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
+	scrapeURI       = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
+	hostOverride    = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
+	insecure        = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
+	toolkitFlags    = kingpinflag.AddFlags(kingpin.CommandLine, ":9117")
+	gracefulStop    = make(chan os.Signal, 1)
 )
 
 func main() {
-
 	promlogConfig := &promlog.Config{}
 
 	// Parse flags
@@ -58,20 +56,12 @@ func main() {
 		Insecure:     *insecure,
 	}
 
-	webSystemdSocket := false
-	webListenAddresses := []string{*listeningAddress}
-	flagConfig := &web.FlagConfig{
-		WebConfigFile:      configFile,
-		WebSystemdSocket:   &webSystemdSocket,
-		WebListenAddresses: &webListenAddresses,
-	}
 	exporter := collector.NewExporter(logger, config)
 	prometheus.MustRegister(exporter)
 	prometheus.MustRegister(version.NewCollector("apache_exporter"))
 
 	level.Info(logger).Log("msg", "Starting apache_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())
-	level.Info(logger).Log("msg", "Starting Server: ", "listen_address", *listeningAddress)
 	level.Info(logger).Log("msg", "Collect from: ", "scrape_uri", *scrapeURI)
 
 	// listener for the termination signals from the OS
@@ -80,7 +70,6 @@ func main() {
 		sig := <-gracefulStop
 		level.Info(logger).Log("msg", "caught sig: %+v. Wait 2 seconds...", "sig", sig)
 		time.Sleep(2 * time.Second)
-		level.Info(logger).Log("msg", "Terminate apache-exporter on port:", "listen_address", *listeningAddress)
 		os.Exit(0)
 	}()
 
@@ -94,13 +83,10 @@ func main() {
 			 </body>
 			 </html>`))
 	})
-	//log.Fatal(http.ListenAndServe(*listeningAddress, nil))
 
-	server := &http.Server{Addr: *listeningAddress}
-
-	if err := web.ListenAndServe(server, flagConfig, logger); err != nil {
-		level.Error(logger).Log("msg", "Listening error", "reason", err)
+	server := &http.Server{}
+	if err := web.ListenAndServe(server, toolkitFlags, logger); err != nil {
+		level.Error(logger).Log("err", err)
 		os.Exit(1)
 	}
-
 }
