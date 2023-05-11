@@ -1,4 +1,4 @@
-FROM golang:1.20.3 as base
+FROM golang:1.20.4 as base
 
 WORKDIR /go/src/github.com/prometheus-community/apache_exporter
 
