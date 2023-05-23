@@ -15,7 +15,6 @@ jobs:
     - name: Upload master to Quay.io
       uses: fjogeleit/http-request-action@master
       with:
-        url: 'https://sysdig-jenkins.internal.sysdig.com/view/Integrations/job/integrations-apache-exporter/buildWithParameters?token=${{ secrets.JENKINS_PROMCAT_LAUNCH_TOKEN }}&EXPORTER=apache-exporter&DRY_RUN=true'
+        url: 'https://jenkins.internal.sysdig.tools/job/promcat/job/exporters/job/integrations-apache-exporter/buildWithParameters?token=${{ secrets.JENKINS_PROMCAT_LAUNCH_TOKEN_SMPROD13666 }}&EXPORTER=apache-exporter&DRY_RUN=true'
         method: 'POST'
-        username: david.lorite@sysdig.com
-        password: ${{ secrets.JENKINS_PROMCAT_API_TOKEN }}
+        username: jenkins+qa@sysdig.com
