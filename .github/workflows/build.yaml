@@ -18,7 +18,7 @@ jobs:
     name: ${{ matrix.docker }}
     steps:
     - name: build
-      uses: sysdiglabs/exporter-builder@v0.6
+      uses: sysdiglabs/exporter-builder@v1.0
       with:
         exporter: apache-exporter
         artifactory_token: ${{ secrets.GAR_DEV_RW_JSON_KEY }}
