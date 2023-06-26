@@ -26,10 +26,11 @@ const (
 )
 
 type Exporter struct {
-	URI          string
-	hostOverride string
-	mutex        sync.Mutex
-	client       *http.Client
+	URI           string
+	hostOverride  string
+	customHeaders map[string]string
+	mutex         sync.Mutex
+	client        *http.Client
 
 	up                    *prometheus.Desc
 	scrapeFailures        prometheus.Counter
@@ -56,16 +57,18 @@ type Exporter struct {
 }
 
 type Config struct {
-	ScrapeURI    string
-	HostOverride string
-	Insecure     bool
+	ScrapeURI     string
+	HostOverride  string
+	Insecure      bool
+	CustomHeaders map[string]string
 }
 
 func NewExporter(logger log.Logger, config *Config) *Exporter {
 	return &Exporter{
-		URI:          config.ScrapeURI,
-		hostOverride: config.HostOverride,
-		logger:       logger,
+		URI:           config.ScrapeURI,
+		hostOverride:  config.HostOverride,
+		customHeaders: config.CustomHeaders,
+		logger:        logger,
 		up: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "up"),
 			"Could the apache server be reached",
@@ -275,6 +278,9 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	}
 	if err != nil {
 		return fmt.Errorf("error building scraping request: %v", err)
+	}
+	for k, v := range e.customHeaders {
+		req.Header.Add(k, v)
 	}
 	resp, err := e.client.Do(req)
 	if err != nil {

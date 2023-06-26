@@ -22,6 +22,7 @@ Help on flags:
       --host_override=""         Override for HTTP Host header; empty string for
                                  no override.
       --[no-]insecure            Ignore server certificate if using https.
+      --custom_headers     Adds custom headers to the collector.
       --[no-]web.systemd-socket  Use systemd socket activation listeners instead
                                  of port listeners (Linux only).
       --web.listen-address=:9117 ...
@@ -34,6 +35,7 @@ Help on flags:
       --log.format=logfmt        Output format of log messages. One of: [logfmt,
                                  json]
       --[no-]version             Show application version.
+
 </pre>
 
 Tested on Apache 2.2 and Apache 2.4.
