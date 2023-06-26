@@ -33,7 +33,7 @@ var (
 	insecure        = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
 	toolkitFlags    = kingpinflag.AddFlags(kingpin.CommandLine, ":9117")
 	gracefulStop    = make(chan os.Signal, 1)
-	customHeaders    = kingpin.Flag("custom_headers", "Adds custom headers to the collector.").StringMap()
+	customHeaders   = kingpin.Flag("custom_headers", "Adds custom headers to the collector.").StringMap()
 )
 
 func main() {
