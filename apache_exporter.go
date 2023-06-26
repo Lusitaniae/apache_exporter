@@ -32,6 +32,7 @@ var (
 	scrapeURI        = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
 	hostOverride     = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
 	insecure         = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
+	customHeaders    = kingpin.Flag("custom_headers", "Adds custom headers to the collector.").StringMap()
 	configFile       = kingpin.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
 	gracefulStop     = make(chan os.Signal, 1)
 )
@@ -53,9 +54,10 @@ func main() {
 	signal.Notify(gracefulStop, syscall.SIGQUIT)
 
 	config := &collector.Config{
-		ScrapeURI:    *scrapeURI,
-		HostOverride: *hostOverride,
-		Insecure:     *insecure,
+		ScrapeURI:     *scrapeURI,
+		HostOverride:  *hostOverride,
+		Insecure:      *insecure,
+		CustomHeaders: *customHeaders,
 	}
 
 	webSystemdSocket := false

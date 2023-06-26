@@ -273,9 +273,10 @@ func checkApacheStatus(t *testing.T, status string, metricCount int) {
 	promlogConfig := &promlog.Config{}
 	logger := promlog.New(promlogConfig)
 	config := &collector.Config{
-		ScrapeURI:    server.URL,
-		HostOverride: "",
-		Insecure:     false,
+		ScrapeURI:     server.URL,
+		HostOverride:  "",
+		Insecure:      false,
+		CustomHeaders: map[string]string{"Cookie": "A test cookie"},
 	}
 	e := collector.NewExporter(logger, config)
 	ch := make(chan prometheus.Metric)
