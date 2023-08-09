@@ -16,8 +16,8 @@ jobs:
       uses: toptal/jenkins-job-trigger-action@master
       with:
         jenkins_url: "https://jenkins.internal.sysdig.tools/"
-        jenkins_user: 'jenkins+qa@sysdig.com'
-        jenkins_token: ${{ secrets.JENKINS_PROMCAT_LAUNCH_TOKEN_SMPROD13666 }}
+        jenkins_user: 'jenkins-bot@sysdig.com'
+        jenkins_token: ${{ secrets.JENKINS_BOT_API_TOKEN }}
         job_name: "promcat/job/exporters/job/integrations-apache-exporter"
         job_params: |
           {
