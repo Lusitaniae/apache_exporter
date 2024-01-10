@@ -10,6 +10,7 @@ package collector
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/prometheus/common/version"
 	"io"
 	"net/http"
 	"strconv"
@@ -31,6 +32,7 @@ type Exporter struct {
 	customHeaders map[string]string
 	mutex         sync.Mutex
 	client        *http.Client
+	userAgent     string
 
 	up                    *prometheus.Desc
 	scrapeFailures        prometheus.Counter
@@ -197,6 +199,7 @@ func NewExporter(logger log.Logger, config *Config) *Exporter {
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Insecure},
 			},
 		},
+		userAgent: fmt.Sprintf("Prometheus-Apache-Exporter/%s", version.Version),
 	}
 }
 
@@ -273,6 +276,7 @@ func (e *Exporter) updateScoreboard(scoreboard string) {
 
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	req, err := http.NewRequest("GET", e.URI, nil)
+	req.Header.Set("User-Agent", e.userAgent)
 	if e.hostOverride != "" {
 		req.Host = e.hostOverride
 	}
