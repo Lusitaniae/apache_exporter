@@ -76,15 +76,24 @@ func main() {
 	}()
 
 	http.Handle(*metricsEndpoint, promhttp.Handler())
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`<html>
-			 <head><title>Apache Exporter</title></head>
-			 <body>
-			 <h1>Apache Exporter</h1>
-			 <p><a href='` + *metricsEndpoint + `'>Metrics</a></p>
-			 </body>
-			 </html>`))
-	})
+
+	landingConfig := web.LandingConfig{
+		Name:        "Apache Exporter",
+		Description: "Prometheus exporter for Apache HTTP server metrics",
+		Version:     version.Info(),
+		Links: []web.LandingLinks{
+			{
+				Address: *metricsEndpoint,
+				Text:    "Metrics",
+			},
+		},
+	}
+	landingPage, err := web.NewLandingPage(landingConfig)
+	if err != nil {
+		level.Error(logger).Log("err", err)
+		os.Exit(1)
+	}
+	http.Handle("/", landingPage)
 
 	server := &http.Server{}
 	if err := web.ListenAndServe(server, toolkitFlags, logger); err != nil {
