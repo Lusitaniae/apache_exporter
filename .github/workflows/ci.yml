@@ -44,6 +44,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v4.0.0
         with:
+          # Keep in sync with Makefile.common
           version: v1.56.2
 
   # modified from the original as this repo still using master, insteead of main
