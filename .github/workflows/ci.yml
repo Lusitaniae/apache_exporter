@@ -13,7 +13,7 @@ jobs:
       image: quay.io/prometheus/golang-builder:1.19-base
     steps:
       - uses: actions/checkout@v3
-      - uses: prometheus/promci@v0.0.2
+      - uses: prometheus/promci@v0.1.0
       - uses: ./.github/promci/actions/setup_environment
       - run: make
 
@@ -25,7 +25,7 @@ jobs:
         thread: [ 0, 1, 2 ]
     steps:
       - uses: actions/checkout@v3
-      - uses: prometheus/promci@v0.0.2
+      - uses: prometheus/promci@v0.1.0
       - uses: ./.github/promci/actions/build
         with:
           parallelism: 3
