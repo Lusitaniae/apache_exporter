@@ -1,7 +1,7 @@
 go:
     # Whenever the Go version is updated here,
-    # .circle/config.yml should also be updated.
-    version: 1.19
+    # .github/workflows/ci.yml should also be updated.
+    version: 1.22
     # cgo: false
 repository:
     path: github.com/Lusitaniae/apache_exporter
