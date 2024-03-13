@@ -44,7 +44,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v4.0.0
         with:
-          version: v1.51.1
+          version: v1.56.2
 
   # modified from the original as this repo still using master, insteead of main
   publish_master:
