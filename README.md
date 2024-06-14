@@ -1,3 +1,14 @@
+## ⚠️ Repository Archived - No Longer Maintained
+
+Notice: This repository is no longer actively maintained by Sysdig.
+
+As of 14th June 2024, we will not be providing any further updates, bug fixes, or support for this project. Instead of forking this repository, we recommend using the original repository from which this project was forked: [APACHE_EXPORTER](https://github.com/Lusitaniae/apache_exporter).
+
+We have transitioned to using the Bitnami image for this Prometheus exporter, which is based on the original repository. You can find more information and the Bitnami image here: [Bitnami Image Link](https://hub.docker.com/r/bitnami/apache-exporter).
+
+We appreciate the community's contributions and support over the lifespan of this project.
+
+Thank you for your understanding.
 
 # Apache Exporter for Prometheus [![Build Status][buildstatus]][circleci]
 
