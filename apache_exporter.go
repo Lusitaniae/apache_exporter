@@ -27,10 +27,10 @@ import (
 )
 
 var (
-	metricsEndpoint = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").String()
-	scrapeURI       = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").String()
-	hostOverride    = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").String()
-	insecure        = kingpin.Flag("insecure", "Ignore server certificate if using https.").Bool()
+	metricsEndpoint = kingpin.Flag("telemetry.endpoint", "Path under which to expose metrics.").Default("/metrics").Envar("METRICS_ENDPOINT").String()
+	scrapeURI       = kingpin.Flag("scrape_uri", "URI to apache stub status page.").Default("http://localhost/server-status/?auto").Envar("SCRAPE_URI").String()
+	hostOverride    = kingpin.Flag("host_override", "Override for HTTP Host header; empty string for no override.").Default("").Envar("HOST_OVERRIDE").String()
+	insecure        = kingpin.Flag("insecure", "Ignore server certificate if using https.").Envar("INSECURE").Bool()
 	toolkitFlags    = kingpinflag.AddFlags(kingpin.CommandLine, ":9117")
 	gracefulStop    = make(chan os.Signal, 1)
 	customHeaders   = kingpin.Flag("custom_headers", "Adds custom headers to the collector.").StringMap()
