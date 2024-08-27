@@ -13,7 +13,7 @@ jobs:
       image: quay.io/prometheus/golang-builder:1.22-base
     steps:
       - uses: actions/checkout@v4
-      - uses: prometheus/promci@v0.1.0
+      - uses: prometheus/promci@v0.3.0
       - uses: ./.github/promci/actions/setup_environment
       - run: make
 
@@ -25,7 +25,7 @@ jobs:
         thread: [ 0, 1, 2 ]
     steps:
       - uses: actions/checkout@v4
-      - uses: prometheus/promci@v0.1.0
+      - uses: prometheus/promci@v0.3.0
       - uses: ./.github/promci/actions/build
         with:
           parallelism: 3
@@ -55,7 +55,7 @@ jobs:
     if: github.event_name == 'push' && github.event.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
-      - uses: prometheus/promci@v0.1.0
+      - uses: prometheus/promci@v0.3.0
       - uses: ./.github/promci/actions/publish_main
         with:
           docker_hub_organization: lusotycoon
@@ -72,7 +72,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
-      - uses: prometheus/promci@v0.1.0
+      - uses: prometheus/promci@v0.3.0
       - uses: ./.github/promci/actions/publish_release
         with:
           docker_hub_organization: lusotycoon
