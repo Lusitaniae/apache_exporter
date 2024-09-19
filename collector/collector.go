@@ -13,14 +13,13 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/version"
 )
@@ -64,7 +63,7 @@ type Exporter struct {
 	proxyBalancerBusy     *prometheus.GaugeVec
 	proxyBalancerReqSize  *prometheus.Desc
 	proxyBalancerRespSize *prometheus.Desc
-	logger                log.Logger
+	logger                *slog.Logger
 }
 
 type Config struct {
@@ -74,7 +73,7 @@ type Config struct {
 	CustomHeaders map[string]string
 }
 
-func NewExporter(logger log.Logger, config *Config) *Exporter {
+func NewExporter(logger *slog.Logger, config *Config) *Exporter {
 	return &Exporter{
 		URI:           config.ScrapeURI,
 		hostOverride:  config.HostOverride,
@@ -565,7 +564,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.mutex.Lock() // To protect metrics from concurrent collects.
 	defer e.mutex.Unlock()
 	if err := e.collect(ch); err != nil {
-		level.Error(e.logger).Log("msg", "Error scraping Apache:", "err", err)
+		e.logger.Error("Error scraping Apache", "err", err)
 		e.scrapeFailures.Inc()
 		e.scrapeFailures.Collect(ch)
 	}
