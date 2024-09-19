@@ -15,12 +15,11 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	versioncollector "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/promlog"
-	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/common/promslog"
+	"github.com/prometheus/common/promslog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
@@ -39,14 +38,14 @@ var (
 )
 
 func main() {
-	promlogConfig := &promlog.Config{}
+	promslogConfig := &promslog.Config{}
 
 	// Parse flags
-	flag.AddFlags(kingpin.CommandLine, promlogConfig)
+	flag.AddFlags(kingpin.CommandLine, promslogConfig)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(version.Print("apache_exporter"))
 	kingpin.Parse()
-	logger := promlog.New(promlogConfig)
+	logger := promslog.New(promslogConfig)
 	// listen to termination signals from the OS
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
@@ -64,15 +63,15 @@ func main() {
 	prometheus.MustRegister(exporter)
 	prometheus.MustRegister(versioncollector.NewCollector("apache_exporter"))
 
-	level.Info(logger).Log("msg", "Starting apache_exporter", "version", version.Info())
-	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())
-	level.Info(logger).Log("msg", "Collect from: ", "scrape_uri", *scrapeURI)
+	logger.Info("Starting apache_exporter", "version", version.Info())
+	logger.Info("Build context", "build", version.BuildContext())
+	logger.Info("Collect metrics from", "scrape_uri", *scrapeURI)
 
 	// listener for the termination signals from the OS
 	go func() {
-		level.Info(logger).Log("msg", "listening and wait for graceful stop")
+		logger.Info("listening and wait for graceful stop")
 		sig := <-gracefulStop
-		level.Info(logger).Log("msg", "caught sig: %+v. Wait 2 seconds...", "sig", sig)
+		logger.Info("caught sig: %+v. Wait 2 seconds...", "sig", sig)
 		time.Sleep(2 * time.Second)
 		os.Exit(0)
 	}()
@@ -92,14 +91,14 @@ func main() {
 	}
 	landingPage, err := web.NewLandingPage(landingConfig)
 	if err != nil {
-		level.Error(logger).Log("err", err)
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 	http.Handle("/", landingPage)
 
 	server := &http.Server{}
 	if err := web.ListenAndServe(server, toolkitFlags, logger); err != nil {
-		level.Error(logger).Log("err", err)
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 }
