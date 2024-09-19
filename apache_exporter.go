@@ -14,16 +14,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Lusitaniae/apache_exporter/collector"
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	versioncollector "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
+
+	"github.com/Lusitaniae/apache_exporter/collector"
 )
 
 var (
@@ -60,7 +62,7 @@ func main() {
 
 	exporter := collector.NewExporter(logger, config)
 	prometheus.MustRegister(exporter)
-	prometheus.MustRegister(version.NewCollector("apache_exporter"))
+	prometheus.MustRegister(versioncollector.NewCollector("apache_exporter"))
 
 	level.Info(logger).Log("msg", "Starting apache_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())
