@@ -69,9 +69,9 @@ func main() {
 
 	// listener for the termination signals from the OS
 	go func() {
-		logger.Info("listening and wait for graceful stop")
+		logger.Debug("Listening and waiting for graceful stop")
 		sig := <-gracefulStop
-		logger.Info("caught sig: %+v. Wait 2 seconds...", "sig", sig)
+		logger.Info("Caught signal. Wait 2 seconds...", "sig", sig)
 		time.Sleep(2 * time.Second)
 		os.Exit(0)
 	}()
