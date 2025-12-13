@@ -1,5 +1,23 @@
-# Run only staticcheck for now. Additional linters will be enabled one-by-one.
+version: "2"
 linters:
+  default: none
   enable:
-  - staticcheck
-  disable-all: true
+    - staticcheck
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
