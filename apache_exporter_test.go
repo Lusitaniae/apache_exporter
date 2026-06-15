@@ -14,7 +14,7 @@ import (
 
 	"github.com/Lusitaniae/apache_exporter/collector"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promslog"
 )
 
 const (
@@ -270,8 +270,8 @@ func checkApacheStatus(t *testing.T, status string, metricCount int) {
 		w.Write([]byte(status))
 	})
 	server := httptest.NewServer(handler)
-	promlogConfig := &promlog.Config{}
-	logger := promlog.New(promlogConfig)
+	promslogConfig := &promslog.Config{}
+	logger := promslog.New(promslogConfig)
 	config := &collector.Config{
 		ScrapeURI:     server.URL,
 		HostOverride:  "",

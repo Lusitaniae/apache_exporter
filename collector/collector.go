@@ -8,21 +8,30 @@
 package collector
 
 import (
+	"bufio"
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/version"
 )
 
 const (
 	namespace = "apache"
+)
+
+var (
+	// Regular expressions for matching proxy balancer status lines.
+	reProxyBalName   = regexp.MustCompile(`ProxyBalancer\[\d+\]Name`)
+	reProxyBalWorker = regexp.MustCompile(`ProxyBalancer\[\d+\]Worker\[\d+\](\S+)`)
 )
 
 type Exporter struct {
@@ -31,6 +40,7 @@ type Exporter struct {
 	customHeaders map[string]string
 	mutex         sync.Mutex
 	client        *http.Client
+	userAgent     string
 
 	up                    *prometheus.Desc
 	scrapeFailures        prometheus.Counter
@@ -53,7 +63,7 @@ type Exporter struct {
 	proxyBalancerBusy     *prometheus.GaugeVec
 	proxyBalancerReqSize  *prometheus.Desc
 	proxyBalancerRespSize *prometheus.Desc
-	logger                log.Logger
+	logger                *slog.Logger
 }
 
 type Config struct {
@@ -63,7 +73,7 @@ type Config struct {
 	CustomHeaders map[string]string
 }
 
-func NewExporter(logger log.Logger, config *Config) *Exporter {
+func NewExporter(logger *slog.Logger, config *Config) *Exporter {
 	return &Exporter{
 		URI:           config.ScrapeURI,
 		hostOverride:  config.HostOverride,
@@ -197,6 +207,7 @@ func NewExporter(logger log.Logger, config *Config) *Exporter {
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Insecure},
 			},
 		},
+		userAgent: fmt.Sprintf("Prometheus-Apache-Exporter/%s", version.Version),
 	}
 }
 
@@ -227,7 +238,6 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 
 // Split colon separated string into two fields
 func splitkv(s string) (string, string) {
-
 	if len(s) == 0 {
 		return s, s
 	}
@@ -272,36 +282,37 @@ func (e *Exporter) updateScoreboard(scoreboard string) {
 }
 
 func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
-	req, err := http.NewRequest("GET", e.URI, nil)
+	req, err := http.NewRequest(http.MethodGet, e.URI, nil)
+	if err != nil {
+		return fmt.Errorf("error building scraping request: %w", err)
+	}
+
 	if e.hostOverride != "" {
 		req.Host = e.hostOverride
 	}
-	if err != nil {
-		return fmt.Errorf("error building scraping request: %v", err)
-	}
+
 	for k, v := range e.customHeaders {
 		req.Header.Add(k, v)
 	}
+
+	req.Header.Set("User-Agent", e.userAgent)
 	resp, err := e.client.Do(req)
 	if err != nil {
 		ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
-		return fmt.Errorf("error scraping apache: %v", err)
+		return fmt.Errorf("error scraping Apache: %w", err)
 	}
 	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 1)
 
 	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		if err != nil {
 			data = []byte(err.Error())
 		}
 		return fmt.Errorf("status %s (%d): %s", resp.Status, resp.StatusCode, data)
 	}
 
-	lines := strings.Split(string(data), "\n")
-
 	connectionInfo := false
-	//connectionInfo := false
 	version := "UNKNOWN"
 	mpm := "UNKNOWN"
 	balancerName := "UNKNOWN"
@@ -312,28 +323,26 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 	e.proxyBalancerStatus.Reset()
 	e.proxyBalancerBusy.Reset()
 
-	for _, l := range lines {
-		key, v := splitkv(l)
+	scanner := bufio.NewScanner(bytes.NewReader(data))
+
+	for scanner.Scan() {
+		key, v := splitkv(scanner.Text())
 		if err != nil {
 			continue
 		}
 
 		switch {
 		case key == "ServerVersion":
-			var tmpstr string
-			var vparts []string
-
 			version = v
-			tmpstr = strings.Split(v, "/")[1]
+			tmpstr := strings.Split(v, "/")[1]
 			tmpstr = strings.Split(tmpstr, " ")[0]
-			vparts = strings.Split(tmpstr, ".")
-			tmpstr = vparts[0] + "." + fmt.Sprintf("%02s", vparts[1]) + fmt.Sprintf("%03s", vparts[2])
+			vparts := strings.Split(tmpstr, ".")
+			tmpstr = fmt.Sprintf("%s.%02s%03s", vparts[0], vparts[1], vparts[2])
 
 			val, err := strconv.ParseFloat(tmpstr, 64)
 			if err != nil {
 				return err
 			}
-
 			ch <- prometheus.MustNewConstMetric(e.apacheVersion, prometheus.GaugeValue, val)
 		case key == "ServerMPM":
 			mpm = v
@@ -342,56 +351,48 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			if err != nil {
 				return err
 			}
-
 			e.generation.WithLabelValues("config").Set(val)
 		case key == "ParentServerMPMGeneration":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.generation.WithLabelValues("mpm").Set(val)
 		case key == "Load1":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.load.WithLabelValues("1min").Set(val)
 		case key == "Load5":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.load.WithLabelValues("5min").Set(val)
 		case key == "Load15":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.load.WithLabelValues("15min").Set(val)
 		case key == "Total Accesses":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			ch <- prometheus.MustNewConstMetric(e.accessesTotal, prometheus.CounterValue, val)
 		case key == "Total kBytes":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			ch <- prometheus.MustNewConstMetric(e.kBytesTotal, prometheus.CounterValue, val)
 		case key == "Total Duration":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			ch <- prometheus.MustNewConstMetric(e.durationTotal, prometheus.CounterValue, val)
 		case key == "CPUUser":
 			val, err := strconv.ParseFloat(v, 64)
@@ -430,49 +431,42 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			if err != nil {
 				return err
 			}
-
 			e.cpuload.Set(val)
 		case key == "Uptime":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			ch <- prometheus.MustNewConstMetric(e.uptime, prometheus.CounterValue, val)
 		case key == "BusyWorkers":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.workers.WithLabelValues("busy").Set(val)
 		case key == "IdleWorkers":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.workers.WithLabelValues("idle").Set(val)
 		case key == "Processes":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.processes.WithLabelValues("all").Set(val)
 		case key == "Stopping":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.processes.WithLabelValues("stopping").Set(val)
 		case key == "ConnsTotal":
 			val, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return err
 			}
-
 			e.connections.WithLabelValues("total").Set(val)
 			connectionInfo = true
 		case key == "ConnsAsyncWriting":
@@ -480,7 +474,6 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 			if err != nil {
 				return err
 			}
-
 			e.connections.WithLabelValues("writing").Set(val)
 			connectionInfo = true
 		case key == "ConnsAsyncKeepAlive":
@@ -500,40 +493,40 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		case key == "Scoreboard":
 			e.updateScoreboard(v)
 			e.scoreboard.Collect(ch)
+
 		//ProxyBalancer[0]Name: balancer://sid2021
 		//ProxyBalancer[0]Worker[0]Name: https://z-app-01:9143
 		//ProxyBalancer[0]Worker[0]Status: Init Ok
 		//ProxyBalancer[0]Worker[0]Elected: 5808
 		//...
-		case strings.HasPrefix(key, "ProxyBalancer["):
-			switch {
-			case strings.HasSuffix(key, "]Name"):
-				if strings.Contains(key, "]Worker[") {
-					workerName = v
-				} else {
-					balancerName = v
-				}
-			case strings.HasSuffix(key, "]Status"):
+		case reProxyBalName.MatchString(key):
+			balancerName = v
+		case reProxyBalWorker.MatchString(key):
+			key := reProxyBalWorker.FindStringSubmatch(key)[1]
+			switch key {
+			case "Name":
+				workerName = v
+			case "Status":
 				e.proxyBalancerStatus.WithLabelValues(balancerName, workerName, v).Set(1)
-			case strings.HasSuffix(key, "]Elected"):
+			case "Elected":
 				val, err := strconv.ParseFloat(v, 64)
 				if err != nil {
 					return err
 				}
 				ch <- prometheus.MustNewConstMetric(e.proxyBalancerElected, prometheus.CounterValue, val, balancerName, workerName)
-			case strings.HasSuffix(key, "]Busy"):
+			case "Busy":
 				val, err := strconv.ParseFloat(v, 64)
 				if err != nil {
 					return err
 				}
 				e.proxyBalancerBusy.WithLabelValues(balancerName, workerName).Set(val)
-			case strings.HasSuffix(key, "]Sent"):
+			case "Sent":
 				val, err := strconv.ParseFloat(strings.TrimRight(v, "kK"), 64)
 				if err != nil {
 					return err
 				}
 				ch <- prometheus.MustNewConstMetric(e.proxyBalancerReqSize, prometheus.CounterValue, val, balancerName, workerName)
-			case strings.HasSuffix(key, "]Rcvd"):
+			case "Rcvd":
 				val, err := strconv.ParseFloat(strings.TrimRight(v, "kK"), 64)
 				if err != nil {
 					return err
@@ -571,9 +564,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.mutex.Lock() // To protect metrics from concurrent collects.
 	defer e.mutex.Unlock()
 	if err := e.collect(ch); err != nil {
-		level.Error(e.logger).Log("msg", "Error scraping apache:", "err", err)
+		e.logger.Error("Error scraping Apache", "err", err)
 		e.scrapeFailures.Inc()
 		e.scrapeFailures.Collect(ch)
 	}
-	return
 }
