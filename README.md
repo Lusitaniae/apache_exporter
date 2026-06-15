@@ -3,7 +3,7 @@
 
 [![GitHub release](https://img.shields.io/github/release/Lusitaniae/apache_exporter.svg)][release]
 ![GitHub Downloads](https://img.shields.io/github/downloads/Lusitaniae/apache_exporter/total.svg)
-[![Docker Repository on Quay](https://quay.io/repository/Lusitaniae/apache-exporter/status)][quay]
+[![Docker Repository on Quay](https://quay.io/repository/lusitaniae/apache-exporter/status)][quay]
 [![Docker Pulls](https://img.shields.io/docker/pulls/lusotycoon/apache-exporter.svg?maxAge=604800)][hub]
 
 Exports apache mod_status statistics via HTTP for Prometheus consumption.
@@ -124,7 +124,7 @@ A. In short no, it's not meant for end users. It's part of the CI/CD pipeline in
 
 Q. Can I run this exporter on different architectures (ARM)?
 
-A. This exporter is cross compiled to all architectures using [promu](https://github.com/prometheus/promu) by running `promu crossbuild`. You can find the resulting artifacts in the release page (Github) or docker images in [Quay](https://quay.io/repository/Lusitaniae/apache-exporter) or [Docker](https://hub.docker.com/r/lusotycoon/apache-exporter/).
+A. This exporter is cross compiled to all architectures using [promu](https://github.com/prometheus/promu) by running `promu crossbuild`. You can find the resulting artifacts in the release page (Github) or docker images in [Quay](https://quay.io/repository/lusitaniae/apache-exporter) or [Docker](https://hub.docker.com/r/lusotycoon/apache-exporter/).
 
 Q. Is there a Grafana dashboard for this exporter?
 
@@ -195,7 +195,7 @@ The exporter was originally created by [neezgee](https://github.com/neezgee).
 
 
 [buildstatus]: https://circleci.com/gh/Lusitaniae/apache_exporter/tree/master.svg?style=shield
-[quay]: https://quay.io/repository/Lusitaniae/apache-exporter
+[quay]: https://quay.io/repository/lusitaniae/apache-exporter
 [circleci]: https://circleci.com/gh/Lusitaniae/apache_exporter
 [hub]: https://hub.docker.com/r/lusotycoon/apache-exporter/
 [release]: https://github.com/Lusitaniae/apache_exporter/releases/latest
