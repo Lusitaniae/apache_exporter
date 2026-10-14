@@ -45,7 +45,7 @@ jobs:
         uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # v9.2.1
         with:
           # Keep in sync with Makefile.common
-          version: v2.7.2
+          version: v2.14.0
 
   # modified from the original as this repo still using master, insteead of main
   publish_master:
