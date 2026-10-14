@@ -2,7 +2,7 @@ module github.com/Lusitaniae/apache_exporter
 
 go 1.25.0
 
-toolchain go1.25.11
+toolchain go1.26.9
 
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
