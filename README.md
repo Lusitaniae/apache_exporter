@@ -17,19 +17,25 @@ Help on flags:
                                  --help-long and --help-man).
       --telemetry.endpoint="/metrics"
                                  Path under which to expose metrics.
+                                 ($METRICS_ENDPOINT)
       --scrape_uri="http://localhost/server-status?auto"
-                                 URI to apache stub status page.
+                                 URI to apache stub status page. ($SCRAPE_URI)
       --host_override=""         Override for HTTP Host header; empty string for
-                                 no override.
+                                 no override. ($HOST_OVERRIDE)
       --[no-]insecure            Ignore server certificate if using https.
-      --custom_headers     Adds custom headers to the collector.
+                                 ($INSECURE)
       --[no-]web.systemd-socket  Use systemd socket activation listeners instead
                                  of port listeners (Linux only).
       --web.listen-address=:9117 ...
                                  Addresses on which to expose metrics and web
                                  interface. Repeatable for multiple addresses.
-      --web.config.file=""       [EXPERIMENTAL] Path to configuration file that
-                                 can enable TLS or authentication.
+                                 Examples: `:9100` or `[::1]:9100` for http,
+                                 `vsock://:9100` for vsock
+      --web.config.file=""       Path to configuration file that can
+                                 enable TLS or authentication. See:
+                                 https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md
+      --custom_headers=CUSTOM_HEADERS ...
+                                 Adds custom headers to the collector.
       --log.level=info           Only log messages with the given severity or
                                  above. One of: [debug, info, warn, error]
       --log.format=logfmt        Output format of log messages. One of: [logfmt,
@@ -50,6 +56,13 @@ Override host name by runnning
 ```
 ./apache_exporter --host_override=example.com
 ```
+
+Add custom HTTP headers to the requests sent to the status page with `--custom_headers`, which takes `NAME=VALUE` and can be repeated:
+```
+./apache_exporter --custom_headers=X-Forwarded-Proto=https --custom_headers=Authorization="Bearer <token>"
+```
+
+The `--telemetry.endpoint`, `--scrape_uri`, `--host_override` and `--insecure` flags can also be set with the `METRICS_ENDPOINT`, `SCRAPE_URI`, `HOST_OVERRIDE` and `INSECURE` environment variables.
 
 # Using Docker
 
@@ -128,7 +141,7 @@ A. This exporter is cross compiled to all architectures using [promu](https://gi
 
 Q. Is there a Grafana dashboard for this exporter?
 
-A. There's a 3rd party dashboard [here](https://grafana.com/dashboards/3894) which seems to work.
+A. There's a 3rd party dashboard [here](https://grafana.com/grafana/dashboards/3894) which seems to work.
 Also [monitoring-mixin](https://monitoring.mixins.dev/) (dashboard+prometheus alerts) is available [here](https://github.com/grafana/jsonnet-libs/tree/master/apache-http-mixin).
 
 Q. Can you add additional metrics such as reqpersec, bytespersec and bytesperreq?
@@ -182,7 +195,7 @@ Apache Exporter supports TLS and basic authentication. This enables better
 control of the various HTTP endpoints.
 
 To use TLS and/or basic authentication, you need to pass a configuration file
-using the `--web.config` parameter (see above at help on flags). The format of the file is described
+using the `--web.config.file` parameter (see above at help on flags). The format of the file is described
 [in the exporter-toolkit repository](https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md).
 
 Note that the TLS and basic authentication settings affect all HTTP endpoints:
