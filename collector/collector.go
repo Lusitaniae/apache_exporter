@@ -541,6 +541,9 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		ch <- prometheus.MustNewConstMetric(e.cpuTotal, prometheus.CounterValue, 1000*cpuSystem, "system")
 	}
 
+	// Reset so that a version or MPM change (e.g. after an Apache upgrade)
+	// replaces the old series instead of exporting both.
+	e.apacheInfo.Reset()
 	e.apacheInfo.WithLabelValues(version, mpm).Set(1)
 
 	e.apacheInfo.Collect(ch)
