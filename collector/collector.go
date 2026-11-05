@@ -251,6 +251,29 @@ func splitkv(s string) (string, string) {
 	return strings.TrimSpace(slice[0]), strings.TrimSpace(slice[1])
 }
 
+// parseProxyKBytes parses a mod_proxy balancer worker Sent/Rcvd value and
+// returns it in kilobytes.
+//
+// httpd 2.4.35 and later print a whole number of kilobytes ("5588K"). Older
+// releases format the value with apr_strfsize, which prints plain bytes below
+// 973 ("120") and otherwise a rounded value with a binary K/M/G/T/P/E suffix
+// ("1.2K", " 12K", "3.9M").
+func parseProxyKBytes(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	scale := 1.0 / 1024 // no suffix: bytes
+	if n := len(s); n > 0 {
+		if i := strings.Index("KMGTPE", strings.ToUpper(s[n-1:])); i >= 0 {
+			scale = float64(int64(1) << (10 * i))
+			s = strings.TrimSpace(s[:n-1])
+		}
+	}
+	val, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, err
+	}
+	return val * scale, nil
+}
+
 var scoreboardLabelMap = map[string]string{
 	"_": "idle",
 	"S": "startup",
@@ -521,13 +544,13 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 				}
 				e.proxyBalancerBusy.WithLabelValues(balancerName, workerName).Set(val)
 			case "Sent":
-				val, err := strconv.ParseFloat(strings.TrimRight(v, "kK"), 64)
+				val, err := parseProxyKBytes(v)
 				if err != nil {
 					return err
 				}
 				ch <- prometheus.MustNewConstMetric(e.proxyBalancerReqSize, prometheus.CounterValue, val, balancerName, workerName)
 			case "Rcvd":
-				val, err := strconv.ParseFloat(strings.TrimRight(v, "kK"), 64)
+				val, err := parseProxyKBytes(v)
 				if err != nil {
 					return err
 				}
