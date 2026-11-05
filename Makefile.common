@@ -249,9 +249,11 @@ common-tarball: promu
 
 .PHONY: common-docker $(BUILD_DOCKER_ARCHS)
 common-docker: $(BUILD_DOCKER_ARCHS)
+# DOCKER_ARCHS holds promu architecture names, which are not OCI platform strings.
 $(BUILD_DOCKER_ARCHS): common-docker-%:
 	docker build -t "$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME)-linux-$*:$(DOCKER_IMAGE_TAG)" \
 		-f $(DOCKERFILE_PATH) \
+		--platform "$(if $(filter armv%,$*),linux/arm/v$(patsubst armv%,%,$*),linux/$*)" \
 		--build-arg ARCH="$*" \
 		--build-arg OS="linux" \
 		$(DOCKERBUILD_CONTEXT)
@@ -270,8 +272,7 @@ $(TAG_DOCKER_ARCHS): common-docker-tag-latest-%:
 
 .PHONY: common-docker-manifest
 common-docker-manifest:
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create -a "$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" $(foreach ARCH,$(DOCKER_ARCHS),$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME)-linux-$(ARCH):$(DOCKER_IMAGE_TAG))
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push "$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
+	docker buildx imagetools create -t "$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" $(foreach ARCH,$(DOCKER_ARCHS),$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME)-linux-$(ARCH):$(DOCKER_IMAGE_TAG))
 
 .PHONY: promu
 promu: $(PROMU)
