@@ -357,9 +357,18 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) error {
 		switch {
 		case key == "ServerVersion":
 			version = v
-			tmpstr := strings.Split(v, "/")[1]
+			// With ServerTokens Prod, Major or Minor the version is
+			// "Apache", "Apache/2" or "Apache/2.4", so there is no full
+			// x.y.z version to export.
+			_, tmpstr, ok := strings.Cut(v, "/")
+			if !ok {
+				break
+			}
 			tmpstr = strings.Split(tmpstr, " ")[0]
 			vparts := strings.Split(tmpstr, ".")
+			if len(vparts) < 3 {
+				break
+			}
 			tmpstr = fmt.Sprintf("%s.%02s%03s", vparts[0], vparts[1], vparts[2])
 
 			val, err := strconv.ParseFloat(tmpstr, 64)
